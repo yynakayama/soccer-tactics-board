@@ -1,0 +1,811 @@
+const STORAGE_KEY = "soccer-board-state-v1";
+const DEFAULT_FORMATION = "4-4-2";
+
+const FORMATIONS = {
+  "4-4-2": [
+    [8, 50],
+    [24, 18],
+    [24, 39],
+    [24, 61],
+    [24, 82],
+    [46, 18],
+    [46, 39],
+    [46, 61],
+    [46, 82],
+    [72, 36],
+    [72, 64],
+  ],
+  "4-3-3": [
+    [8, 50],
+    [24, 17],
+    [24, 39],
+    [24, 61],
+    [24, 83],
+    [47, 28],
+    [43, 50],
+    [47, 72],
+    [73, 23],
+    [76, 50],
+    [73, 77],
+  ],
+  "4-2-3-1": [
+    [8, 50],
+    [24, 17],
+    [24, 39],
+    [24, 61],
+    [24, 83],
+    [42, 40],
+    [42, 60],
+    [60, 24],
+    [62, 50],
+    [60, 76],
+    [76, 50],
+  ],
+  "3-5-2": [
+    [8, 50],
+    [25, 30],
+    [23, 50],
+    [25, 70],
+    [45, 15],
+    [43, 34],
+    [45, 50],
+    [43, 66],
+    [45, 85],
+    [72, 38],
+    [72, 62],
+  ],
+};
+
+const els = {
+  formationSelect: document.querySelector("#formationSelect"),
+  applyFormationBtn: document.querySelector("#applyFormationBtn"),
+  resetBoardBtn: document.querySelector("#resetBoardBtn"),
+  clearSelectionBtn: document.querySelector("#clearSelectionBtn"),
+  sortRosterBtn: document.querySelector("#sortRosterBtn"),
+  resetHomeBtn: document.querySelector("#resetHomeBtn"),
+  resetOpponentsBtn: document.querySelector("#resetOpponentsBtn"),
+  addPlayerForm: document.querySelector("#addPlayerForm"),
+  newNumberInput: document.querySelector("#newNumberInput"),
+  newNameInput: document.querySelector("#newNameInput"),
+  boardNotes: document.querySelector("#boardNotes"),
+  field: document.querySelector("#field"),
+  playersLayer: document.querySelector("#playersLayer"),
+  selectionPanel: document.querySelector("#selectionPanel"),
+  substitutionPanel: document.querySelector("#substitutionPanel"),
+  homeRoster: document.querySelector("#homeRoster"),
+  opponentRoster: document.querySelector("#opponentRoster"),
+  homeFieldCount: document.querySelector("#homeFieldCount"),
+  awayFieldCount: document.querySelector("#awayFieldCount"),
+};
+
+let state = {
+  formation: DEFAULT_FORMATION,
+  homePlayers: [],
+  opponentPlayers: [],
+  selected: null,
+  notes: "",
+};
+
+let activeDrag = null;
+
+init();
+
+function init() {
+  loadState();
+  bindEvents();
+  renderAll();
+}
+
+function bindEvents() {
+  els.formationSelect.addEventListener("change", () => {
+    state.formation = getFormationValue();
+    saveState();
+  });
+
+  els.applyFormationBtn.addEventListener("click", () => {
+    state.formation = getFormationValue();
+    applyFormationToHome();
+    saveState();
+    renderAll();
+  });
+
+  els.resetBoardBtn.addEventListener("click", () => {
+    resetBoard();
+  });
+
+  els.clearSelectionBtn.addEventListener("click", () => {
+    state.selected = null;
+    renderSelectionPanel();
+    renderSubstitutionPanel();
+    renderHomeRoster();
+    renderOpponentRoster();
+    syncSelectedTokens();
+  });
+
+  els.sortRosterBtn.addEventListener("click", () => {
+    state.homePlayers.sort(comparePlayersByNumber);
+    saveState();
+    renderAll();
+  });
+
+  els.resetHomeBtn.addEventListener("click", () => {
+    const ok = window.confirm("味方の登録と配置を初期状態に戻しますか？");
+    if (!ok) return;
+    state.homePlayers = createDefaultHomePlayers();
+    state.selected = null;
+    saveState();
+    renderAll();
+  });
+
+  els.resetOpponentsBtn.addEventListener("click", () => {
+    state.opponentPlayers = createDefaultOpponents(state.formation);
+    if (state.selected?.team === "away") state.selected = null;
+    renderAll();
+  });
+
+  els.addPlayerForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const number = sanitizeNumber(els.newNumberInput.value);
+    const name = els.newNameInput.value.trim();
+    if (!number && !name) return;
+
+    state.homePlayers.push({
+      id: makeId("home"),
+      number,
+      name,
+      onField: false,
+      x: 50,
+      y: 50,
+    });
+
+    els.newNumberInput.value = "";
+    els.newNameInput.value = "";
+    saveState();
+    renderAll();
+  });
+
+  els.boardNotes.addEventListener("input", () => {
+    state.notes = els.boardNotes.value;
+    saveState();
+  });
+}
+
+function loadState() {
+  const fallback = {
+    formation: DEFAULT_FORMATION,
+    homePlayers: createDefaultHomePlayers(),
+    notes: "",
+  };
+
+  let saved = null;
+  try {
+    saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "null");
+  } catch {
+    saved = null;
+  }
+
+  const formation = FORMATIONS[saved?.formation] ? saved.formation : fallback.formation;
+  state.formation = formation;
+  state.homePlayers = Array.isArray(saved?.homePlayers)
+    ? sanitizeHomePlayers(saved.homePlayers)
+    : fallback.homePlayers;
+  state.notes = typeof saved?.notes === "string" ? saved.notes : fallback.notes;
+  state.opponentPlayers = createDefaultOpponents(formation);
+  state.selected = null;
+
+  if (!state.homePlayers.length) {
+    state.homePlayers = fallback.homePlayers;
+  }
+  normalizeHomeFieldCount();
+  fillMissingHomePositions();
+}
+
+function saveState() {
+  const payload = {
+    formation: state.formation,
+    homePlayers: state.homePlayers,
+    notes: state.notes,
+  };
+
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    // The board still works if local storage is blocked.
+  }
+}
+
+function sanitizeHomePlayers(players) {
+  return players
+    .filter((player) => player && typeof player === "object")
+    .map((player, index) => ({
+      id: String(player.id || makeId("home")),
+      number: sanitizeNumber(player.number ?? String(index + 1)),
+      name: String(player.name || "").slice(0, 16),
+      onField: Boolean(player.onField),
+      x: clamp(Number(player.x) || 50, 4, 96),
+      y: clamp(Number(player.y) || 50, 6, 94),
+    }));
+}
+
+function createDefaultHomePlayers() {
+  const positions = FORMATIONS[DEFAULT_FORMATION];
+  return Array.from({ length: 18 }, (_, index) => {
+    const isStarter = index < 11;
+    const position = positions[index] || [50, 50];
+    return {
+      id: `home-${index + 1}`,
+      number: String(index + 1),
+      name: "",
+      onField: isStarter,
+      x: position[0],
+      y: position[1],
+    };
+  });
+}
+
+function createDefaultOpponents(formationName) {
+  const positions = FORMATIONS[formationName] || FORMATIONS[DEFAULT_FORMATION];
+  return positions.map(([x, y], index) => ({
+    id: `away-${index + 1}`,
+    number: String(index + 1),
+    x: 100 - x,
+    y,
+  }));
+}
+
+function resetBoard() {
+  state.formation = getFormationValue();
+  normalizeHomeFieldCount();
+  applyFormationToHome();
+  state.opponentPlayers = createDefaultOpponents(state.formation);
+  state.selected = null;
+  state.notes = "";
+  saveState();
+  renderAll();
+}
+
+function normalizeHomeFieldCount() {
+  const starters = state.homePlayers.filter((player) => player.onField);
+  const bench = state.homePlayers.filter((player) => !player.onField);
+
+  if (starters.length > 11) {
+    starters.slice(11).forEach((player) => {
+      player.onField = false;
+    });
+  }
+
+  while (state.homePlayers.filter((player) => player.onField).length < 11 && bench.length) {
+    const next = bench.shift();
+    next.onField = true;
+  }
+}
+
+function fillMissingHomePositions() {
+  const positions = FORMATIONS[state.formation] || FORMATIONS[DEFAULT_FORMATION];
+  getHomeFieldPlayers().forEach((player, index) => {
+    const fallback = positions[index] || [50, 50];
+    player.x = clamp(Number(player.x) || fallback[0], 4, 96);
+    player.y = clamp(Number(player.y) || fallback[1], 6, 94);
+  });
+}
+
+function applyFormationToHome() {
+  const positions = FORMATIONS[state.formation] || FORMATIONS[DEFAULT_FORMATION];
+  getHomeFieldPlayers().forEach((player, index) => {
+    const position = positions[index] || [50, 50];
+    player.x = position[0];
+    player.y = position[1];
+  });
+}
+
+function renderAll() {
+  validateSelection();
+  els.formationSelect.value = state.formation;
+  els.boardNotes.value = state.notes;
+  renderFieldPlayers();
+  renderCounts();
+  renderSelectionPanel();
+  renderSubstitutionPanel();
+  renderHomeRoster();
+  renderOpponentRoster();
+}
+
+function renderFieldPlayers() {
+  els.playersLayer.replaceChildren();
+
+  getHomeFieldPlayers().forEach((player) => {
+    els.playersLayer.appendChild(createPlayerToken("home", player));
+  });
+
+  state.opponentPlayers.forEach((player) => {
+    els.playersLayer.appendChild(createPlayerToken("away", player));
+  });
+
+  syncSelectedTokens();
+}
+
+function createPlayerToken(team, player) {
+  const token = document.createElement("button");
+  token.type = "button";
+  token.className = `player-token ${team}`;
+  token.dataset.team = team;
+  token.dataset.id = player.id;
+  token.style.left = `${player.x}%`;
+  token.style.top = `${player.y}%`;
+  token.setAttribute("aria-label", `${team === "home" ? "味方" : "相手"} ${displayNumber(player)}`);
+
+  const number = document.createElement("span");
+  number.className = "number";
+  number.textContent = displayNumber(player);
+  token.appendChild(number);
+
+  if (team === "home" && player.name) {
+    const tag = document.createElement("span");
+    tag.className = "name-tag";
+    tag.textContent = player.name;
+    token.appendChild(tag);
+  }
+
+  token.addEventListener("pointerdown", startDrag);
+  token.addEventListener("keydown", nudgeSelectedPlayer);
+  return token;
+}
+
+function startDrag(event) {
+  if (event.button !== undefined && event.button > 0) return;
+  event.preventDefault();
+
+  const token = event.currentTarget;
+  const team = token.dataset.team;
+  const id = token.dataset.id;
+  selectPlayer(team, id);
+
+  activeDrag = {
+    team,
+    id,
+    startX: event.clientX,
+    startY: event.clientY,
+    moved: false,
+  };
+
+  window.addEventListener("pointermove", moveDrag);
+  window.addEventListener("pointerup", endDrag, { once: true });
+}
+
+function moveDrag(event) {
+  if (!activeDrag) return;
+  const player = findPlayer(activeDrag.team, activeDrag.id);
+  if (!player) return;
+
+  const rect = els.field.getBoundingClientRect();
+  player.x = clamp(((event.clientX - rect.left) / rect.width) * 100, 4, 96);
+  player.y = clamp(((event.clientY - rect.top) / rect.height) * 100, 6, 94);
+
+  if (
+    Math.abs(event.clientX - activeDrag.startX) > 2 ||
+    Math.abs(event.clientY - activeDrag.startY) > 2
+  ) {
+    activeDrag.moved = true;
+  }
+
+  const token = findToken(activeDrag.team, activeDrag.id);
+  if (token) {
+    token.style.left = `${player.x}%`;
+    token.style.top = `${player.y}%`;
+    token.classList.add("dragging");
+  }
+}
+
+function endDrag() {
+  if (activeDrag?.moved) {
+    saveState();
+  }
+  activeDrag = null;
+  window.removeEventListener("pointermove", moveDrag);
+  renderFieldPlayers();
+}
+
+function nudgeSelectedPlayer(event) {
+  const keys = ["ArrowUp", "ArrowRight", "ArrowDown", "ArrowLeft"];
+  if (!keys.includes(event.key)) return;
+  event.preventDefault();
+
+  const team = event.currentTarget.dataset.team;
+  const id = event.currentTarget.dataset.id;
+  const player = findPlayer(team, id);
+  if (!player) return;
+
+  selectPlayer(team, id);
+  const step = event.shiftKey ? 3 : 1;
+  if (event.key === "ArrowUp") player.y -= step;
+  if (event.key === "ArrowRight") player.x += step;
+  if (event.key === "ArrowDown") player.y += step;
+  if (event.key === "ArrowLeft") player.x -= step;
+  player.x = clamp(player.x, 4, 96);
+  player.y = clamp(player.y, 6, 94);
+  saveState();
+  renderFieldPlayers();
+}
+
+function renderCounts() {
+  els.homeFieldCount.textContent = String(getHomeFieldPlayers().length);
+  els.awayFieldCount.textContent = String(state.opponentPlayers.length);
+}
+
+function renderSelectionPanel() {
+  els.selectionPanel.replaceChildren();
+  const selected = getSelectedPlayer();
+
+  if (!selected) {
+    els.selectionPanel.appendChild(emptyState("選択なし"));
+    return;
+  }
+
+  const card = document.createElement("div");
+  card.className = "selection-card";
+
+  const meta = document.createElement("div");
+  meta.className = "selection-meta";
+  const pill = document.createElement("span");
+  pill.className = `pill ${selected.team}`;
+  pill.textContent = selected.team === "home" ? "味方" : "相手";
+  const status = document.createElement("span");
+  status.textContent =
+    selected.team === "home" ? (selected.player.onField ? "ピッチ" : "控え") : "ピッチ";
+  meta.append(pill, status);
+
+  const grid = document.createElement("div");
+  grid.className = "field-grid";
+
+  const numberLabel = document.createElement("label");
+  numberLabel.textContent = "背番号";
+  const numberInput = document.createElement("input");
+  numberInput.type = "text";
+  numberInput.inputMode = "numeric";
+  numberInput.maxLength = 3;
+  numberInput.value = selected.player.number;
+  numberLabel.appendChild(numberInput);
+
+  grid.appendChild(numberLabel);
+
+  if (selected.team === "home") {
+    const nameLabel = document.createElement("label");
+    nameLabel.textContent = "名前";
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.maxLength = 16;
+    nameInput.value = selected.player.name;
+    nameLabel.appendChild(nameInput);
+    grid.appendChild(nameLabel);
+
+    numberInput.addEventListener("input", () => {
+      numberInput.value = sanitizeNumber(numberInput.value);
+      selected.player.number = numberInput.value;
+      saveState();
+      renderFieldPlayers();
+      renderHomeRoster();
+      renderSubstitutionPanel();
+    });
+
+    nameInput.addEventListener("input", () => {
+      selected.player.name = nameInput.value.slice(0, 16);
+      saveState();
+      renderFieldPlayers();
+      renderHomeRoster();
+      renderSubstitutionPanel();
+    });
+  } else {
+    numberInput.addEventListener("input", () => {
+      numberInput.value = sanitizeNumber(numberInput.value);
+      selected.player.number = numberInput.value;
+      renderFieldPlayers();
+      renderOpponentRoster();
+    });
+  }
+
+  card.append(meta, grid);
+  els.selectionPanel.appendChild(card);
+}
+
+function renderSubstitutionPanel() {
+  els.substitutionPanel.replaceChildren();
+  const selected = getSelectedPlayer();
+
+  if (!selected || selected.team !== "home") {
+    els.substitutionPanel.appendChild(emptyState("味方選手を選択"));
+    return;
+  }
+
+  if (selected.player.onField) {
+    const bench = getHomeBenchPlayers();
+    if (!bench.length) {
+      els.substitutionPanel.appendChild(emptyState("控えなし"));
+      return;
+    }
+    els.substitutionPanel.appendChild(createSubstitutionList(bench, (benchPlayer) => {
+      swapHomePlayers(selected.player.id, benchPlayer.id);
+    }));
+    return;
+  }
+
+  const starters = getHomeFieldPlayers();
+  if (!starters.length) {
+    els.substitutionPanel.appendChild(emptyState("ピッチの選手なし"));
+    return;
+  }
+  els.substitutionPanel.appendChild(createSubstitutionList(starters, (starter) => {
+    swapHomePlayers(starter.id, selected.player.id);
+  }));
+}
+
+function createSubstitutionList(players, onSwap) {
+  const list = document.createElement("div");
+  list.className = "roster-list";
+  players.forEach((player) => {
+    list.appendChild(createPlayerRow({
+      player,
+      team: "home",
+      actions: [
+        {
+          label: "交代",
+          className: "mini-button primary",
+          onClick: () => onSwap(player),
+        },
+      ],
+    }));
+  });
+  return list;
+}
+
+function renderHomeRoster() {
+  els.homeRoster.replaceChildren();
+  const fieldPlayers = getHomeFieldPlayers();
+  const benchPlayers = getHomeBenchPlayers();
+  els.homeRoster.appendChild(createRosterGroup(`ピッチ ${fieldPlayers.length}`, fieldPlayers));
+  els.homeRoster.appendChild(createRosterGroup(`控え ${benchPlayers.length}`, benchPlayers));
+}
+
+function createRosterGroup(title, players) {
+  const group = document.createElement("div");
+  group.className = "roster-group";
+
+  const heading = document.createElement("div");
+  heading.className = "group-heading";
+  heading.textContent = title;
+  group.appendChild(heading);
+
+  if (!players.length) {
+    group.appendChild(emptyState("該当なし"));
+    return group;
+  }
+
+  players.forEach((player) => {
+    const actions = [
+      {
+        label: "選択",
+        className: "mini-button",
+        onClick: () => selectPlayer("home", player.id),
+      },
+    ];
+
+    const selected = getSelectedPlayer();
+    if (selected?.team === "home" && selected.player.onField && !player.onField) {
+      actions.unshift({
+        label: "交代",
+        className: "mini-button primary",
+        onClick: () => swapHomePlayers(selected.player.id, player.id),
+      });
+    }
+
+    if (selected?.team === "home" && !selected.player.onField && player.onField) {
+      actions.unshift({
+        label: "交代",
+        className: "mini-button primary",
+        onClick: () => swapHomePlayers(player.id, selected.player.id),
+      });
+    }
+
+    if (!player.onField) {
+      actions.push({
+        label: "削除",
+        className: "mini-button danger",
+        onClick: () => removeHomePlayer(player.id),
+      });
+    }
+
+    group.appendChild(createPlayerRow({ player, team: "home", actions }));
+  });
+
+  return group;
+}
+
+function renderOpponentRoster() {
+  els.opponentRoster.replaceChildren();
+  state.opponentPlayers.forEach((player) => {
+    const row = document.createElement("div");
+    row.className = "player-row";
+    if (isSelected("away", player.id)) row.classList.add("selected");
+
+    const input = document.createElement("input");
+    input.className = "opponent-input";
+    input.type = "text";
+    input.inputMode = "numeric";
+    input.maxLength = 3;
+    input.value = player.number;
+    input.setAttribute("aria-label", `相手 ${player.id.replace("away-", "")} 背番号`);
+    input.addEventListener("focus", () => {
+      state.selected = { team: "away", id: player.id };
+      renderSelectionPanel();
+      renderSubstitutionPanel();
+      syncSelectedTokens();
+    });
+    input.addEventListener("input", () => {
+      input.value = sanitizeNumber(input.value);
+      player.number = input.value;
+      renderFieldPlayers();
+      renderSelectionPanel();
+    });
+
+    row.appendChild(input);
+    els.opponentRoster.appendChild(row);
+  });
+}
+
+function createPlayerRow({ player, team, actions }) {
+  const row = document.createElement("div");
+  row.className = "player-row";
+  if (isSelected(team, player.id)) row.classList.add("selected");
+
+  const badge = document.createElement("div");
+  badge.className = `number-badge ${team}`;
+  badge.textContent = displayNumber(player);
+
+  const name = document.createElement("div");
+  name.className = "player-name";
+  const primary = document.createElement("strong");
+  primary.textContent = team === "home" ? player.name || "名前未登録" : "相手";
+  const secondary = document.createElement("span");
+  secondary.textContent = player.onField ? "ピッチ" : "控え";
+  name.append(primary, secondary);
+
+  const actionWrap = document.createElement("div");
+  actionWrap.className = "row-actions";
+  actions.forEach((action) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = action.className;
+    button.textContent = action.label;
+    button.addEventListener("click", action.onClick);
+    actionWrap.appendChild(button);
+  });
+
+  row.append(badge, name, actionWrap);
+  return row;
+}
+
+function swapHomePlayers(starterId, benchId) {
+  const starter = state.homePlayers.find((player) => player.id === starterId);
+  const bench = state.homePlayers.find((player) => player.id === benchId);
+  if (!starter || !bench || !starter.onField || bench.onField) return;
+
+  const position = [starter.x, starter.y];
+  starter.onField = false;
+  bench.onField = true;
+  bench.x = position[0];
+  bench.y = position[1];
+  state.selected = { team: "home", id: bench.id };
+  saveState();
+  renderAll();
+}
+
+function removeHomePlayer(id) {
+  const player = state.homePlayers.find((item) => item.id === id);
+  if (!player || player.onField) return;
+  const label = player.name || `No.${displayNumber(player)}`;
+  const ok = window.confirm(`${label}を削除しますか？`);
+  if (!ok) return;
+
+  state.homePlayers = state.homePlayers.filter((item) => item.id !== id);
+  if (isSelected("home", id)) state.selected = null;
+  saveState();
+  renderAll();
+}
+
+function selectPlayer(team, id) {
+  if (!findPlayer(team, id)) return;
+  state.selected = { team, id };
+  renderSelectionPanel();
+  renderSubstitutionPanel();
+  renderHomeRoster();
+  renderOpponentRoster();
+  syncSelectedTokens();
+}
+
+function validateSelection() {
+  if (!state.selected) return;
+  if (!findPlayer(state.selected.team, state.selected.id)) {
+    state.selected = null;
+  }
+}
+
+function getSelectedPlayer() {
+  if (!state.selected) return null;
+  const player = findPlayer(state.selected.team, state.selected.id);
+  if (!player) return null;
+  return {
+    team: state.selected.team,
+    player,
+  };
+}
+
+function findPlayer(team, id) {
+  if (team === "home") {
+    return state.homePlayers.find((player) => player.id === id);
+  }
+  return state.opponentPlayers.find((player) => player.id === id);
+}
+
+function getHomeFieldPlayers() {
+  return state.homePlayers.filter((player) => player.onField);
+}
+
+function getHomeBenchPlayers() {
+  return state.homePlayers.filter((player) => !player.onField);
+}
+
+function syncSelectedTokens() {
+  els.playersLayer.querySelectorAll(".player-token").forEach((token) => {
+    token.classList.toggle("selected", isSelected(token.dataset.team, token.dataset.id));
+  });
+}
+
+function findToken(team, id) {
+  return Array.from(els.playersLayer.querySelectorAll(".player-token")).find(
+    (token) => token.dataset.team === team && token.dataset.id === id,
+  );
+}
+
+function isSelected(team, id) {
+  return state.selected?.team === team && state.selected?.id === id;
+}
+
+function displayNumber(player) {
+  return player.number || "-";
+}
+
+function sanitizeNumber(value) {
+  return String(value || "")
+    .replace(/[^\d]/g, "")
+    .slice(0, 3);
+}
+
+function comparePlayersByNumber(a, b) {
+  const aNumber = Number.parseInt(a.number, 10);
+  const bNumber = Number.parseInt(b.number, 10);
+  const aScore = Number.isFinite(aNumber) ? aNumber : 999;
+  const bScore = Number.isFinite(bNumber) ? bNumber : 999;
+  if (aScore !== bScore) return aScore - bScore;
+  return (a.name || "").localeCompare(b.name || "", "ja");
+}
+
+function getFormationValue() {
+  return FORMATIONS[els.formationSelect.value] ? els.formationSelect.value : DEFAULT_FORMATION;
+}
+
+function makeId(prefix) {
+  if (window.crypto?.randomUUID) {
+    return `${prefix}-${window.crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function emptyState(text) {
+  const div = document.createElement("div");
+  div.className = "empty-state";
+  div.textContent = text;
+  return div;
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}

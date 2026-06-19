@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Soccer Board</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">SB</div>
+          <div>
+            <h1>Soccer Board</h1>
+            <p>チーム戦術ホワイトボード</p>
+          </div>
+        </div>
+
+        <div class="toolbar" aria-label="ボード操作">
+          <label class="select-control">
+            <span>配置</span>
+            <select id="formationSelect">
+              <option value="4-4-2">4-4-2</option>
+              <option value="4-3-3">4-3-3</option>
+              <option value="4-2-3-1">4-2-3-1</option>
+              <option value="3-5-2">3-5-2</option>
+            </select>
+          </label>
+          <button id="applyFormationBtn" class="secondary-button" type="button">反映</button>
+          <button id="resetBoardBtn" class="primary-button" type="button">ボードリセット</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="board-area" aria-label="サッカーフィールド">
+          <div class="score-strip">
+            <div>
+              <span class="team-dot home-dot"></span>
+              味方 <strong id="homeFieldCount">0</strong>
+            </div>
+            <div>
+              <span class="team-dot away-dot"></span>
+              相手 <strong id="awayFieldCount">0</strong>
+            </div>
+          </div>
+
+          <div class="field-shell">
+            <div id="field" class="field" aria-label="フィールド">
+              <div class="field-marking half-line"></div>
+              <div class="field-marking center-circle"></div>
+              <div class="field-marking center-spot"></div>
+              <div class="field-marking penalty-box left"></div>
+              <div class="field-marking penalty-box right"></div>
+              <div class="field-marking six-box left"></div>
+              <div class="field-marking six-box right"></div>
+              <div class="field-marking goal left"></div>
+              <div class="field-marking goal right"></div>
+              <div id="playersLayer" class="players-layer"></div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="side-panel" aria-label="管理パネル">
+          <section class="panel-section">
+            <div class="section-title">
+              <h2>選択中</h2>
+              <button id="clearSelectionBtn" class="text-button" type="button">解除</button>
+            </div>
+            <div id="selectionPanel"></div>
+          </section>
+
+          <section class="panel-section">
+            <div class="section-title">
+              <h2>交代</h2>
+            </div>
+            <div id="substitutionPanel"></div>
+          </section>
+
+          <section class="panel-section">
+            <div class="section-title">
+              <h2>味方登録</h2>
+              <button id="sortRosterBtn" class="text-button" type="button">番号順</button>
+            </div>
+            <form id="addPlayerForm" class="add-player-form">
+              <input id="newNumberInput" type="text" inputmode="numeric" autocomplete="off" placeholder="No." maxlength="3" />
+              <input id="newNameInput" type="text" autocomplete="off" placeholder="名前" maxlength="16" />
+              <button class="secondary-button" type="submit">追加</button>
+            </form>
+            <div id="homeRoster" class="roster-list"></div>
+            <button id="resetHomeBtn" class="danger-button" type="button">味方登録を初期化</button>
+          </section>
+
+          <section class="panel-section">
+            <div class="section-title">
+              <h2>相手番号</h2>
+              <button id="resetOpponentsBtn" class="text-button" type="button">リセット</button>
+            </div>
+            <div id="opponentRoster" class="roster-list compact"></div>
+          </section>
+
+          <section class="panel-section">
+            <div class="section-title">
+              <h2>メモ</h2>
+            </div>
+            <textarea id="boardNotes" rows="5" maxlength="400" placeholder="今日の狙い、交代案、セットプレーなど"></textarea>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
