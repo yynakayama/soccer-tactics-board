@@ -59,6 +59,7 @@ const FORMATIONS = {
 const els = {
   formationSelect: document.querySelector("#formationSelect"),
   applyFormationBtn: document.querySelector("#applyFormationBtn"),
+  toggleOrientationBtn: document.querySelector("#toggleOrientationBtn"),
   resetBoardBtn: document.querySelector("#resetBoardBtn"),
   clearSelectionBtn: document.querySelector("#clearSelectionBtn"),
   sortRosterBtn: document.querySelector("#sortRosterBtn"),
@@ -85,6 +86,7 @@ let state = {
   ball: createDefaultBall(),
   selected: null,
   notes: "",
+  orientation: "horizontal",
 };
 
 let activeDrag = null;
@@ -106,6 +108,12 @@ function bindEvents() {
   els.applyFormationBtn.addEventListener("click", () => {
     state.formation = getFormationValue();
     applyFormationToHome();
+    saveState();
+    renderAll();
+  });
+
+  els.toggleOrientationBtn.addEventListener("click", () => {
+    state.orientation = state.orientation === "vertical" ? "horizontal" : "vertical";
     saveState();
     renderAll();
   });
@@ -196,6 +204,7 @@ function loadState() {
     ? sanitizeOpponents(saved.opponentPlayers, formation)
     : createDefaultOpponents(formation);
   state.ball = sanitizeBall(saved?.ball);
+  state.orientation = saved?.orientation === "vertical" ? "vertical" : "horizontal";
   state.selected = null;
 
   if (!state.homePlayers.length) {
@@ -212,6 +221,7 @@ function saveState() {
     opponentPlayers: state.opponentPlayers,
     ball: state.ball,
     notes: state.notes,
+    orientation: state.orientation,
   };
 
   try {
@@ -344,8 +354,16 @@ function applyFormationToOpponents() {
   });
 }
 
+function applyOrientation() {
+  const vertical = state.orientation === "vertical";
+  els.field.classList.toggle("vertical", vertical);
+  els.toggleOrientationBtn.textContent = vertical ? "横表示" : "縦表示";
+  els.toggleOrientationBtn.setAttribute("aria-pressed", String(vertical));
+}
+
 function renderAll() {
   validateSelection();
+  applyOrientation();
   els.formationSelect.value = state.formation;
   els.boardNotes.value = state.notes;
   renderFieldPlayers();
