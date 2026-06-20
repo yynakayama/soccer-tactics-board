@@ -396,8 +396,7 @@ function createPlayerToken(team, player) {
   token.className = `player-token ${team}`;
   token.dataset.team = team;
   token.dataset.id = player.id;
-  token.style.left = `${player.x}%`;
-  token.style.top = `${player.y}%`;
+  setTokenPosition(token, player);
   token.setAttribute("aria-label", `${team === "home" ? "味方" : "相手"} ${displayNumber(player)}`);
 
   const number = document.createElement("span");
@@ -423,8 +422,7 @@ function createBallToken() {
   token.className = "ball-token";
   token.dataset.team = "ball";
   token.dataset.id = "ball";
-  token.style.left = `${state.ball.x}%`;
-  token.style.top = `${state.ball.y}%`;
+  setTokenPosition(token, state.ball);
   token.setAttribute("aria-label", "ボール");
 
   token.addEventListener("pointerdown", startDrag);
@@ -459,8 +457,11 @@ function moveDrag(event) {
   if (!player) return;
 
   const rect = els.field.getBoundingClientRect();
-  player.x = clampX(activeDrag.team, ((event.clientX - rect.left) / rect.width) * 100);
-  player.y = clampY(activeDrag.team, ((event.clientY - rect.top) / rect.height) * 100);
+  const fx = ((event.clientX - rect.left) / rect.width) * 100;
+  const fy = ((event.clientY - rect.top) / rect.height) * 100;
+  const data = fromScreenFraction(fx, fy);
+  player.x = clampX(activeDrag.team, data.x);
+  player.y = clampY(activeDrag.team, data.y);
 
   if (
     Math.abs(event.clientX - activeDrag.startX) > 2 ||
@@ -471,8 +472,7 @@ function moveDrag(event) {
 
   const token = findToken(activeDrag.team, activeDrag.id);
   if (token) {
-    token.style.left = `${player.x}%`;
-    token.style.top = `${player.y}%`;
+    setTokenPosition(token, player);
     token.classList.add("dragging");
   }
 }
@@ -498,10 +498,17 @@ function nudgeSelectedPlayer(event) {
 
   if (team !== "ball") selectPlayer(team, id);
   const step = event.shiftKey ? 3 : 1;
-  if (event.key === "ArrowUp") player.y -= step;
-  if (event.key === "ArrowRight") player.x += step;
-  if (event.key === "ArrowDown") player.y += step;
-  if (event.key === "ArrowLeft") player.x -= step;
+  if (state.orientation === "vertical") {
+    if (event.key === "ArrowUp") player.x += step;
+    if (event.key === "ArrowDown") player.x -= step;
+    if (event.key === "ArrowRight") player.y += step;
+    if (event.key === "ArrowLeft") player.y -= step;
+  } else {
+    if (event.key === "ArrowUp") player.y -= step;
+    if (event.key === "ArrowDown") player.y += step;
+    if (event.key === "ArrowRight") player.x += step;
+    if (event.key === "ArrowLeft") player.x -= step;
+  }
   player.x = clampX(team, player.x);
   player.y = clampY(team, player.y);
   saveState();
@@ -899,6 +906,26 @@ function emptyState(text) {
   div.className = "empty-state";
   div.textContent = text;
   return div;
+}
+
+function toScreenPosition(entity) {
+  if (state.orientation === "vertical") {
+    return { left: entity.y, top: 100 - entity.x };
+  }
+  return { left: entity.x, top: entity.y };
+}
+
+function setTokenPosition(token, entity) {
+  const position = toScreenPosition(entity);
+  token.style.left = `${position.left}%`;
+  token.style.top = `${position.top}%`;
+}
+
+function fromScreenFraction(fx, fy) {
+  if (state.orientation === "vertical") {
+    return { x: 100 - fy, y: fx };
+  }
+  return { x: fx, y: fy };
 }
 
 function clampX(team, value) {
