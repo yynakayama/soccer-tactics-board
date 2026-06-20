@@ -359,6 +359,7 @@ textarea {
   bottom: auto;
   left: 3.5%;
   right: 3.5%;
+  height: 0;
   border-left: 0;
   border-top: 2px solid rgba(255, 255, 255, 0.86);
 }
@@ -366,6 +367,7 @@ textarea {
 .field.vertical .center-circle {
   width: auto;
   height: 18%;
+  aspect-ratio: 1;
 }
 
 .field.vertical .penalty-box {
@@ -817,6 +819,9 @@ textarea {
   }
 }
 
+/* 縦表示のデスクトップ時のみフィールド幅を抑えて中央寄せ。
+   :has() 非対応の旧ブラウザではこの規則が無視され、縦フィールドは
+   シェル幅いっぱい・縦長で表示される（描画・操作は影響なし）。 */
 @media (min-width: 681px) {
   .field-shell:has(.field.vertical) {
     width: 100%;
