@@ -345,6 +345,89 @@ textarea {
   border-left: 0;
 }
 
+.field.vertical {
+  aspect-ratio: 68 / 105;
+  background: repeating-linear-gradient(
+    0deg,
+    var(--field-dark) 0 9.09%,
+    var(--field-light) 9.09% 18.18%
+  );
+}
+
+.field.vertical .half-line {
+  top: 50%;
+  bottom: auto;
+  left: 3.5%;
+  right: 3.5%;
+  border-left: 0;
+  border-top: 2px solid rgba(255, 255, 255, 0.86);
+}
+
+.field.vertical .center-circle {
+  width: auto;
+  height: 18%;
+}
+
+.field.vertical .penalty-box {
+  top: auto;
+  bottom: auto;
+  left: 22%;
+  right: auto;
+  width: 56%;
+  height: 15.5%;
+  border: 2px solid rgba(255, 255, 255, 0.86);
+}
+
+.field.vertical .penalty-box.left {
+  bottom: 3.5%;
+  border-bottom: 0;
+}
+
+.field.vertical .penalty-box.right {
+  top: 3.5%;
+  border-top: 0;
+}
+
+.field.vertical .six-box {
+  top: auto;
+  bottom: auto;
+  left: 36%;
+  right: auto;
+  width: 28%;
+  height: 5.5%;
+  border: 2px solid rgba(255, 255, 255, 0.86);
+}
+
+.field.vertical .six-box.left {
+  bottom: 3.5%;
+  border-bottom: 0;
+}
+
+.field.vertical .six-box.right {
+  top: 3.5%;
+  border-top: 0;
+}
+
+.field.vertical .goal {
+  top: auto;
+  bottom: auto;
+  left: 44%;
+  right: auto;
+  width: 12%;
+  height: 1.6%;
+  border: 2px solid rgba(255, 255, 255, 0.86);
+}
+
+.field.vertical .goal.left {
+  bottom: 0.8%;
+  border-top: 0;
+}
+
+.field.vertical .goal.right {
+  top: 0.8%;
+  border-bottom: 0;
+}
+
 .players-layer {
   position: absolute;
   inset: 0;
@@ -731,5 +814,13 @@ textarea {
 
   .add-player-form button {
     grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 681px) {
+  .field-shell:has(.field.vertical) {
+    width: 100%;
+    max-width: min(460px, calc((100vh - 220px) * 0.6476));
+    margin-inline: auto;
   }
 }
