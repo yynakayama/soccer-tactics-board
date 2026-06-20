@@ -82,6 +82,7 @@ let state = {
   formation: DEFAULT_FORMATION,
   homePlayers: [],
   opponentPlayers: [],
+  ball: createDefaultBall(),
   selected: null,
   notes: "",
 };
@@ -140,6 +141,7 @@ function bindEvents() {
   els.resetOpponentsBtn.addEventListener("click", () => {
     state.opponentPlayers = createDefaultOpponents(state.formation);
     if (state.selected?.team === "away") state.selected = null;
+    saveState();
     renderAll();
   });
 
@@ -190,7 +192,10 @@ function loadState() {
     ? sanitizeHomePlayers(saved.homePlayers)
     : fallback.homePlayers;
   state.notes = typeof saved?.notes === "string" ? saved.notes : fallback.notes;
-  state.opponentPlayers = createDefaultOpponents(formation);
+  state.opponentPlayers = Array.isArray(saved?.opponentPlayers)
+    ? sanitizeOpponents(saved.opponentPlayers, formation)
+    : createDefaultOpponents(formation);
+  state.ball = sanitizeBall(saved?.ball);
   state.selected = null;
 
   if (!state.homePlayers.length) {
@@ -204,6 +209,8 @@ function saveState() {
   const payload = {
     formation: state.formation,
     homePlayers: state.homePlayers,
+    opponentPlayers: state.opponentPlayers,
+    ball: state.ball,
     notes: state.notes,
   };
 
@@ -248,16 +255,46 @@ function createDefaultOpponents(formationName) {
   return positions.map(([x, y], index) => ({
     id: `away-${index + 1}`,
     number: String(index + 1),
+    name: "",
     x: 100 - x,
     y,
   }));
+}
+
+function sanitizeOpponents(players, formationName) {
+  const positions = FORMATIONS[formationName] || FORMATIONS[DEFAULT_FORMATION];
+  const valid = players.filter((player) => player && typeof player === "object");
+  if (!valid.length) return createDefaultOpponents(formationName);
+
+  return valid.map((player, index) => {
+    const fallback = positions[index] || [50, 50];
+    return {
+      id: String(player.id || `away-${index + 1}`),
+      number: sanitizeNumber(player.number ?? String(index + 1)),
+      name: String(player.name || "").slice(0, 16),
+      x: clamp(Number(player.x) || 100 - fallback[0], 4, 96),
+      y: clamp(Number(player.y) || fallback[1], 6, 94),
+    };
+  });
+}
+
+function createDefaultBall() {
+  return { x: 50, y: 50 };
+}
+
+function sanitizeBall(ball) {
+  return {
+    x: clamp(Number(ball?.x) || 50, 2, 98),
+    y: clamp(Number(ball?.y) || 50, 2, 98),
+  };
 }
 
 function resetBoard() {
   state.formation = getFormationValue();
   normalizeHomeFieldCount();
   applyFormationToHome();
-  state.opponentPlayers = createDefaultOpponents(state.formation);
+  applyFormationToOpponents();
+  state.ball = createDefaultBall();
   state.selected = null;
   state.notes = "";
   saveState();
@@ -298,6 +335,15 @@ function applyFormationToHome() {
   });
 }
 
+function applyFormationToOpponents() {
+  const positions = FORMATIONS[state.formation] || FORMATIONS[DEFAULT_FORMATION];
+  state.opponentPlayers.forEach((player, index) => {
+    const position = positions[index] || [50, 50];
+    player.x = 100 - position[0];
+    player.y = position[1];
+  });
+}
+
 function renderAll() {
   validateSelection();
   els.formationSelect.value = state.formation;
@@ -321,6 +367,8 @@ function renderFieldPlayers() {
     els.playersLayer.appendChild(createPlayerToken("away", player));
   });
 
+  els.playersLayer.appendChild(createBallToken());
+
   syncSelectedTokens();
 }
 
@@ -339,12 +387,27 @@ function createPlayerToken(team, player) {
   number.textContent = displayNumber(player);
   token.appendChild(number);
 
-  if (team === "home" && player.name) {
+  if (player.name) {
     const tag = document.createElement("span");
     tag.className = "name-tag";
     tag.textContent = player.name;
     token.appendChild(tag);
   }
+
+  token.addEventListener("pointerdown", startDrag);
+  token.addEventListener("keydown", nudgeSelectedPlayer);
+  return token;
+}
+
+function createBallToken() {
+  const token = document.createElement("button");
+  token.type = "button";
+  token.className = "ball-token";
+  token.dataset.team = "ball";
+  token.dataset.id = "ball";
+  token.style.left = `${state.ball.x}%`;
+  token.style.top = `${state.ball.y}%`;
+  token.setAttribute("aria-label", "ボール");
 
   token.addEventListener("pointerdown", startDrag);
   token.addEventListener("keydown", nudgeSelectedPlayer);
@@ -358,7 +421,7 @@ function startDrag(event) {
   const token = event.currentTarget;
   const team = token.dataset.team;
   const id = token.dataset.id;
-  selectPlayer(team, id);
+  if (team !== "ball") selectPlayer(team, id);
 
   activeDrag = {
     team,
@@ -378,8 +441,8 @@ function moveDrag(event) {
   if (!player) return;
 
   const rect = els.field.getBoundingClientRect();
-  player.x = clamp(((event.clientX - rect.left) / rect.width) * 100, 4, 96);
-  player.y = clamp(((event.clientY - rect.top) / rect.height) * 100, 6, 94);
+  player.x = clampX(activeDrag.team, ((event.clientX - rect.left) / rect.width) * 100);
+  player.y = clampY(activeDrag.team, ((event.clientY - rect.top) / rect.height) * 100);
 
   if (
     Math.abs(event.clientX - activeDrag.startX) > 2 ||
@@ -415,14 +478,14 @@ function nudgeSelectedPlayer(event) {
   const player = findPlayer(team, id);
   if (!player) return;
 
-  selectPlayer(team, id);
+  if (team !== "ball") selectPlayer(team, id);
   const step = event.shiftKey ? 3 : 1;
   if (event.key === "ArrowUp") player.y -= step;
   if (event.key === "ArrowRight") player.x += step;
   if (event.key === "ArrowDown") player.y += step;
   if (event.key === "ArrowLeft") player.x -= step;
-  player.x = clamp(player.x, 4, 96);
-  player.y = clamp(player.y, 6, 94);
+  player.x = clampX(team, player.x);
+  player.y = clampY(team, player.y);
   saveState();
   renderFieldPlayers();
 }
@@ -466,42 +529,37 @@ function renderSelectionPanel() {
   numberInput.value = selected.player.number;
   numberLabel.appendChild(numberInput);
 
-  grid.appendChild(numberLabel);
+  const nameLabel = document.createElement("label");
+  nameLabel.textContent = "名前";
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.maxLength = 16;
+  nameInput.value = selected.player.name || "";
+  nameLabel.appendChild(nameInput);
 
-  if (selected.team === "home") {
-    const nameLabel = document.createElement("label");
-    nameLabel.textContent = "名前";
-    const nameInput = document.createElement("input");
-    nameInput.type = "text";
-    nameInput.maxLength = 16;
-    nameInput.value = selected.player.name;
-    nameLabel.appendChild(nameInput);
-    grid.appendChild(nameLabel);
+  grid.append(numberLabel, nameLabel);
 
-    numberInput.addEventListener("input", () => {
-      numberInput.value = sanitizeNumber(numberInput.value);
-      selected.player.number = numberInput.value;
-      saveState();
-      renderFieldPlayers();
+  const refreshAfterEdit = () => {
+    saveState();
+    renderFieldPlayers();
+    if (selected.team === "home") {
       renderHomeRoster();
       renderSubstitutionPanel();
-    });
-
-    nameInput.addEventListener("input", () => {
-      selected.player.name = nameInput.value.slice(0, 16);
-      saveState();
-      renderFieldPlayers();
-      renderHomeRoster();
-      renderSubstitutionPanel();
-    });
-  } else {
-    numberInput.addEventListener("input", () => {
-      numberInput.value = sanitizeNumber(numberInput.value);
-      selected.player.number = numberInput.value;
-      renderFieldPlayers();
+    } else {
       renderOpponentRoster();
-    });
-  }
+    }
+  };
+
+  numberInput.addEventListener("input", () => {
+    numberInput.value = sanitizeNumber(numberInput.value);
+    selected.player.number = numberInput.value;
+    refreshAfterEdit();
+  });
+
+  nameInput.addEventListener("input", () => {
+    selected.player.name = nameInput.value.slice(0, 16);
+    refreshAfterEdit();
+  });
 
   card.append(meta, grid);
   els.selectionPanel.appendChild(card);
@@ -623,30 +681,48 @@ function renderOpponentRoster() {
   els.opponentRoster.replaceChildren();
   state.opponentPlayers.forEach((player) => {
     const row = document.createElement("div");
-    row.className = "player-row";
+    row.className = "opponent-row";
     if (isSelected("away", player.id)) row.classList.add("selected");
 
-    const input = document.createElement("input");
-    input.className = "opponent-input";
-    input.type = "text";
-    input.inputMode = "numeric";
-    input.maxLength = 3;
-    input.value = player.number;
-    input.setAttribute("aria-label", `相手 ${player.id.replace("away-", "")} 背番号`);
-    input.addEventListener("focus", () => {
+    const focusAway = () => {
       state.selected = { team: "away", id: player.id };
       renderSelectionPanel();
       renderSubstitutionPanel();
       syncSelectedTokens();
-    });
-    input.addEventListener("input", () => {
-      input.value = sanitizeNumber(input.value);
-      player.number = input.value;
+    };
+
+    const numberInput = document.createElement("input");
+    numberInput.className = "opponent-input number";
+    numberInput.type = "text";
+    numberInput.inputMode = "numeric";
+    numberInput.maxLength = 3;
+    numberInput.value = player.number;
+    numberInput.setAttribute("aria-label", "相手 背番号");
+    numberInput.addEventListener("focus", focusAway);
+    numberInput.addEventListener("input", () => {
+      numberInput.value = sanitizeNumber(numberInput.value);
+      player.number = numberInput.value;
+      saveState();
       renderFieldPlayers();
       renderSelectionPanel();
     });
 
-    row.appendChild(input);
+    const nameInput = document.createElement("input");
+    nameInput.className = "opponent-input name";
+    nameInput.type = "text";
+    nameInput.maxLength = 16;
+    nameInput.value = player.name || "";
+    nameInput.placeholder = "名前";
+    nameInput.setAttribute("aria-label", "相手 名前");
+    nameInput.addEventListener("focus", focusAway);
+    nameInput.addEventListener("input", () => {
+      player.name = nameInput.value.slice(0, 16);
+      saveState();
+      renderFieldPlayers();
+      renderSelectionPanel();
+    });
+
+    row.append(numberInput, nameInput);
     els.opponentRoster.appendChild(row);
   });
 }
@@ -739,6 +815,7 @@ function getSelectedPlayer() {
 }
 
 function findPlayer(team, id) {
+  if (team === "ball") return state.ball;
   if (team === "home") {
     return state.homePlayers.find((player) => player.id === id);
   }
@@ -760,7 +837,7 @@ function syncSelectedTokens() {
 }
 
 function findToken(team, id) {
-  return Array.from(els.playersLayer.querySelectorAll(".player-token")).find(
+  return Array.from(els.playersLayer.children).find(
     (token) => token.dataset.team === team && token.dataset.id === id,
   );
 }
@@ -804,6 +881,14 @@ function emptyState(text) {
   div.className = "empty-state";
   div.textContent = text;
   return div;
+}
+
+function clampX(team, value) {
+  return team === "ball" ? clamp(value, 2, 98) : clamp(value, 4, 96);
+}
+
+function clampY(team, value) {
+  return team === "ball" ? clamp(value, 2, 98) : clamp(value, 6, 94);
 }
 
 function clamp(value, min, max) {

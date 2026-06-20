@@ -413,6 +413,37 @@ textarea {
   z-index: 5;
 }
 
+.ball-token {
+  --ball: 26px;
+  position: absolute;
+  width: var(--ball);
+  height: var(--ball);
+  transform: translate(-50%, -50%);
+  padding: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #ffffff 0 36%, #eef1f4 58%, #c3ccd3 100%);
+  border: 1px solid rgba(20, 28, 24, 0.35);
+  box-shadow: 0 6px 14px rgba(10, 20, 14, 0.42);
+  touch-action: none;
+  user-select: none;
+  z-index: 3;
+}
+
+.ball-token::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 40%;
+  height: 40%;
+  background: #1c2620;
+  clip-path: polygon(50% 0%, 100% 38%, 81% 100%, 19% 100%, 0% 38%);
+}
+
+.ball-token.dragging {
+  z-index: 6;
+}
+
 .side-panel {
   min-width: 0;
   background: var(--panel);
@@ -544,12 +575,24 @@ textarea {
   background: #fff9df;
 }
 
-.roster-list.compact {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.opponent-list {
+  grid-template-columns: 1fr;
 }
 
-.roster-list.compact .player-row {
-  grid-template-columns: 1fr;
+.opponent-row {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  background: #f8faf8;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.opponent-row.selected {
+  border-color: var(--gold);
+  background: #fff9df;
 }
 
 .number-badge {
@@ -623,6 +666,9 @@ textarea {
 
 .opponent-input {
   width: 100%;
+}
+
+.opponent-input.number {
   text-align: center;
   font-weight: 900;
   color: var(--away-deep);
@@ -670,6 +716,10 @@ textarea {
     --token: 38px;
   }
 
+  .ball-token {
+    --ball: 22px;
+  }
+
   .player-token .name-tag {
     max-width: 70px;
     font-size: 0.64rem;
@@ -681,9 +731,5 @@ textarea {
 
   .add-player-form button {
     grid-column: 1 / -1;
-  }
-
-  .roster-list.compact {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
