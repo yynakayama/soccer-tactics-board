@@ -296,6 +296,7 @@ function bindEvents() {
   });
 
   els.drawLayer.addEventListener("pointerdown", startDrawStroke);
+  els.field.addEventListener("click", handleFieldBackgroundClick);
 
   window.addEventListener("resize", () => {
     fitBoardSize();
@@ -495,6 +496,15 @@ function clearSelection() {
   renderOpponentRoster();
   syncSelectedTokens();
   setPanelOpen(false);
+}
+
+// 移動モードでピッチ内の空白をクリック/タップしたら選択を解除する。
+// click はドラッグや描画では発火しないため、コマ操作・描画と干渉しない。
+function handleFieldBackgroundClick(event) {
+  if (drawTool !== "move") return; // 移動モードのみ（ペン/矢印は描画優先）
+  if (!state.selected) return; // 選択が無ければ何もしない
+  if (event.target.closest(".player-token, .ball-token")) return; // コマ/ボールは空白でない
+  clearSelection();
 }
 
 function normalizeHomeFieldCount() {
