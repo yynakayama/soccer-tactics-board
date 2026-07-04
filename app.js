@@ -146,6 +146,7 @@ let activeStroke = null;
 let drawTool = "move";
 let drawColor = "yellow";
 let panelOpen = false;
+let panelOpenedAt = 0;
 let lastTap = null;
 
 init();
@@ -207,7 +208,13 @@ function bindEvents() {
   });
 
   els.togglePanelBtn.addEventListener("click", () => setPanelOpen(!panelOpen));
-  els.panelScrim.addEventListener("click", () => setPanelOpen(false));
+  els.panelScrim.addEventListener("click", () => {
+    // タッチでパネルを開くと、ブラウザが同じ座標へ遅れて発行する互換clickが
+    // 開いた直後のスクリムに当たり、即座に閉じてしまう（ゴーストクリック）。
+    // 開いた直後のスクリムclickは無視する。
+    if (Date.now() - panelOpenedAt < 450) return;
+    setPanelOpen(false);
+  });
 
   els.clearSelectionBtn.addEventListener("click", clearSelection);
 
@@ -583,6 +590,7 @@ function applyPanelOpen() {
 
 function setPanelOpen(open) {
   panelOpen = open;
+  if (open) panelOpenedAt = Date.now();
   applyPanelOpen();
 }
 
