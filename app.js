@@ -324,7 +324,7 @@ function sanitizeDrawings(drawings) {
   if (!Array.isArray(drawings)) return [];
   return drawings
     .filter((stroke) => stroke && typeof stroke === "object")
-    .filter((stroke) => (stroke.tool === "pen" || stroke.tool === "arrow") && DRAW_COLORS[stroke.color])
+    .filter((stroke) => (stroke.tool === "pen" || stroke.tool === "arrow") && Object.hasOwn(DRAW_COLORS, stroke.color))
     .map((stroke) => ({
       id: String(stroke.id || makeId("draw")),
       tool: stroke.tool,
