@@ -241,6 +241,7 @@ function sanitizeHomePlayers(players) {
       onField: Boolean(player.onField),
       x: clamp(Number(player.x) || 50, 4, 96),
       y: clamp(Number(player.y) || 50, 6, 94),
+      dir: normalizeDir(player.dir, 0),
     }));
 }
 
@@ -256,6 +257,7 @@ function createDefaultHomePlayers() {
       onField: isStarter,
       x: position[0],
       y: position[1],
+      dir: 0,
     };
   });
 }
@@ -268,6 +270,7 @@ function createDefaultOpponents(formationName) {
     name: "",
     x: 100 - x,
     y,
+    dir: 180,
   }));
 }
 
@@ -284,6 +287,7 @@ function sanitizeOpponents(players, formationName) {
       name: String(player.name || "").slice(0, 16),
       x: clamp(Number(player.x) || 100 - fallback[0], 4, 96),
       y: clamp(Number(player.y) || fallback[1], 6, 94),
+      dir: normalizeDir(player.dir, 180),
     };
   });
 }
@@ -342,6 +346,7 @@ function applyFormationToHome() {
     const position = positions[index] || [50, 50];
     player.x = position[0];
     player.y = position[1];
+    player.dir = 0;
   });
 }
 
@@ -351,6 +356,7 @@ function applyFormationToOpponents() {
     const position = positions[index] || [50, 50];
     player.x = 100 - position[0];
     player.y = position[1];
+    player.dir = 180;
   });
 }
 
@@ -397,6 +403,7 @@ function createPlayerToken(team, player) {
   token.dataset.team = team;
   token.dataset.id = player.id;
   setTokenPosition(token, player);
+  applyTokenDirection(token, player);
   token.setAttribute("aria-label", `${team === "home" ? "味方" : "相手"} ${displayNumber(player)}`);
 
   const number = document.createElement("span");
@@ -410,6 +417,10 @@ function createPlayerToken(team, player) {
     tag.textContent = player.name;
     token.appendChild(tag);
   }
+
+  const arc = document.createElement("span");
+  arc.className = "dir-arc";
+  token.appendChild(arc);
 
   token.addEventListener("pointerdown", startDrag);
   token.addEventListener("keydown", nudgeSelectedPlayer);
@@ -921,6 +932,14 @@ function setTokenPosition(token, entity) {
   token.style.top = `${position.top}%`;
 }
 
+function applyTokenDirection(token, player) {
+  token.style.setProperty("--dir-screen", `${toScreenAngle(player.dir)}deg`);
+}
+
+function toScreenAngle(dir) {
+  return state.orientation === "vertical" ? dir - 90 : dir;
+}
+
 function fromScreenFraction(fx, fy) {
   if (state.orientation === "vertical") {
     return { x: 100 - fy, y: fx };
@@ -934,6 +953,12 @@ function clampX(team, value) {
 
 function clampY(team, value) {
   return team === "ball" ? clamp(value, 2, 98) : clamp(value, 6, 94);
+}
+
+function normalizeDir(value, fallback) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return fallback;
+  return ((num % 360) + 360) % 360;
 }
 
 function clamp(value, min, max) {

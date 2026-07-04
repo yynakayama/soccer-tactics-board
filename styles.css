@@ -487,6 +487,31 @@ textarea {
   white-space: nowrap;
 }
 
+.player-token .dir-arc {
+  position: absolute;
+  top: calc(var(--token) / 2);
+  left: 50%;
+  width: calc(var(--token) + 10px);
+  height: calc(var(--token) + 10px);
+  border-radius: 50%;
+  background: conic-gradient(
+    from 180deg,
+    var(--arc-color, rgba(23, 33, 27, 0.85)) 0 180deg,
+    transparent 180deg 360deg
+  );
+  transform: translate(-50%, -50%) rotate(var(--dir-screen, 0deg));
+  pointer-events: none;
+  z-index: -1;
+}
+
+.player-token.home .dir-arc {
+  --arc-color: var(--home-deep);
+}
+
+.player-token.away .dir-arc {
+  --arc-color: var(--away-deep);
+}
+
 .player-token.selected .number {
   border-color: var(--gold);
   box-shadow:
