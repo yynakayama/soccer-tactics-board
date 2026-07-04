@@ -1,5 +1,14 @@
 const STORAGE_KEY = "soccer-board-state-v1";
 const DEFAULT_FORMATION = "4-4-2";
+const SVG_NS = "http://www.w3.org/2000/svg";
+const DRAW_COLORS = {
+  yellow: "#f5d90a",
+  red: "#ef4444",
+  blue: "#3b82f6",
+  white: "#ffffff",
+};
+const MAX_STROKES = 300;
+const MAX_STROKE_POINTS = 600;
 
 const FORMATIONS = {
   "4-4-2": [
@@ -71,6 +80,7 @@ const els = {
   boardNotes: document.querySelector("#boardNotes"),
   field: document.querySelector("#field"),
   playersLayer: document.querySelector("#playersLayer"),
+  drawLayer: document.querySelector("#drawLayer"),
   selectionPanel: document.querySelector("#selectionPanel"),
   substitutionPanel: document.querySelector("#substitutionPanel"),
   homeRoster: document.querySelector("#homeRoster"),
@@ -87,10 +97,12 @@ let state = {
   selected: null,
   notes: "",
   orientation: "horizontal",
+  drawings: [],
 };
 
 let activeDrag = null;
 let activeRotate = null;
+let activeStroke = null;
 
 init();
 
@@ -179,6 +191,8 @@ function bindEvents() {
     state.notes = els.boardNotes.value;
     saveState();
   });
+
+  window.addEventListener("resize", renderDrawings);
 }
 
 function loadState() {
@@ -205,6 +219,7 @@ function loadState() {
     ? sanitizeOpponents(saved.opponentPlayers, formation)
     : createDefaultOpponents(formation);
   state.ball = sanitizeBall(saved?.ball);
+  state.drawings = sanitizeDrawings(saved?.drawings);
   state.orientation = saved?.orientation === "vertical" ? "vertical" : "horizontal";
   state.selected = null;
 
@@ -221,6 +236,7 @@ function saveState() {
     homePlayers: state.homePlayers,
     opponentPlayers: state.opponentPlayers,
     ball: state.ball,
+    drawings: state.drawings,
     notes: state.notes,
     orientation: state.orientation,
   };
@@ -304,12 +320,33 @@ function sanitizeBall(ball) {
   };
 }
 
+function sanitizeDrawings(drawings) {
+  if (!Array.isArray(drawings)) return [];
+  return drawings
+    .filter((stroke) => stroke && typeof stroke === "object")
+    .filter((stroke) => (stroke.tool === "pen" || stroke.tool === "arrow") && DRAW_COLORS[stroke.color])
+    .map((stroke) => ({
+      id: String(stroke.id || makeId("draw")),
+      tool: stroke.tool,
+      color: stroke.color,
+      points: (Array.isArray(stroke.points) ? stroke.points : [])
+        .slice(0, MAX_STROKE_POINTS)
+        .map((point) => ({
+          x: clamp(Number(point?.x) || 0, 0, 100),
+          y: clamp(Number(point?.y) || 0, 0, 100),
+        })),
+    }))
+    .filter((stroke) => stroke.points.length >= 2)
+    .slice(0, MAX_STROKES);
+}
+
 function resetBoard() {
   state.formation = getFormationValue();
   normalizeHomeFieldCount();
   applyFormationToHome();
   applyFormationToOpponents();
   state.ball = createDefaultBall();
+  state.drawings = [];
   state.selected = null;
   state.notes = "";
   saveState();
@@ -374,6 +411,7 @@ function renderAll() {
   els.formationSelect.value = state.formation;
   els.boardNotes.value = state.notes;
   renderFieldPlayers();
+  renderDrawings();
   renderCounts();
   renderSelectionPanel();
   renderSubstitutionPanel();
@@ -395,6 +433,79 @@ function renderFieldPlayers() {
   els.playersLayer.appendChild(createBallToken());
 
   syncSelectedTokens();
+}
+
+function renderDrawings() {
+  const svg = els.drawLayer;
+  const rect = svg.getBoundingClientRect();
+  const width = Math.max(1, rect.width);
+  const height = Math.max(1, rect.height);
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.replaceChildren();
+  state.drawings.forEach((stroke) => appendStrokeElements(svg, stroke, width, height));
+  if (activeStroke && activeStroke.points.length >= 2) {
+    appendStrokeElements(svg, activeStroke, width, height);
+  }
+}
+
+function appendStrokeElements(svg, stroke, width, height) {
+  const path = document.createElementNS(SVG_NS, "path");
+  path.setAttribute("d", buildStrokePath(stroke.points, width, height));
+  path.setAttribute("fill", "none");
+  path.setAttribute("stroke", DRAW_COLORS[stroke.color]);
+  path.setAttribute("stroke-width", "3");
+  path.setAttribute("stroke-linecap", "round");
+  path.setAttribute("stroke-linejoin", "round");
+  path.setAttribute("opacity", "0.92");
+  svg.appendChild(path);
+
+  if (stroke.tool === "arrow" && stroke.points.length >= 2) {
+    svg.appendChild(createArrowHead(stroke, width, height));
+  }
+}
+
+function buildStrokePath(points, width, height) {
+  return points
+    .map((point, index) => {
+      const pixel = strokePointToPixel(point, width, height);
+      return `${index === 0 ? "M" : "L"}${pixel.x.toFixed(1)} ${pixel.y.toFixed(1)}`;
+    })
+    .join(" ");
+}
+
+function strokePointToPixel(point, width, height) {
+  const position = toScreenPosition(point);
+  return { x: (position.left / 100) * width, y: (position.top / 100) * height };
+}
+
+function createArrowHead(stroke, width, height) {
+  const points = stroke.points;
+  const tip = strokePointToPixel(points[points.length - 1], width, height);
+  let baseIndex = points.length - 2;
+  let base = strokePointToPixel(points[baseIndex], width, height);
+  while (baseIndex > 0 && Math.hypot(tip.x - base.x, tip.y - base.y) < 6) {
+    baseIndex -= 1;
+    base = strokePointToPixel(points[baseIndex], width, height);
+  }
+  const angle = Math.atan2(tip.y - base.y, tip.x - base.x);
+  const size = 11;
+  const spread = 0.5;
+  const left = {
+    x: tip.x - size * Math.cos(angle - spread),
+    y: tip.y - size * Math.sin(angle - spread),
+  };
+  const right = {
+    x: tip.x - size * Math.cos(angle + spread),
+    y: tip.y - size * Math.sin(angle + spread),
+  };
+  const polygon = document.createElementNS(SVG_NS, "polygon");
+  polygon.setAttribute(
+    "points",
+    `${tip.x.toFixed(1)},${tip.y.toFixed(1)} ${left.x.toFixed(1)},${left.y.toFixed(1)} ${right.x.toFixed(1)},${right.y.toFixed(1)}`,
+  );
+  polygon.setAttribute("fill", DRAW_COLORS[stroke.color]);
+  polygon.setAttribute("opacity", "0.92");
+  return polygon;
 }
 
 function createPlayerToken(team, player) {

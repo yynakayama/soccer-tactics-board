@@ -430,6 +430,15 @@ textarea {
   border-bottom: 0;
 }
 
+.draw-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
 .players-layer {
   position: absolute;
   inset: 0;
