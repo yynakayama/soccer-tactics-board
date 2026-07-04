@@ -413,6 +413,12 @@ function sanitizeDrawings(drawings) {
 
 function resetBoard() {
   state.formation = getFormationValue();
+  state.homePlayers.forEach((player) => {
+    player.sentOff = false;
+  });
+  state.opponentPlayers.forEach((player) => {
+    player.sentOff = false;
+  });
   normalizeHomeFieldCount();
   applyFormationToHome();
   applyFormationToOpponents();
