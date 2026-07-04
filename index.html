@@ -43,7 +43,7 @@
           <button id="toggleHeaderBtn" class="header-toggle" type="button" aria-expanded="true" aria-controls="headerToolbar" aria-label="ツールバーを隠す">▾</button>
         </div>
 
-        <div class="toolbar" id="headerToolbar" aria-label="ボード操作">
+        <div class="toolbar" id="headerToolbar" aria-label="ボード操作" data-i18n="nav.boardControls" data-i18n-attr="aria-label">
           <label class="select-control">
             <span data-i18n="toolbar.formationLabel">配置</span>
             <select id="formationSelect">
@@ -69,7 +69,7 @@
       </header>
 
       <main class="layout">
-        <section class="board-area" aria-label="サッカーフィールド">
+        <section class="board-area" aria-label="サッカーフィールド" data-i18n="nav.field" data-i18n-attr="aria-label">
           <div class="score-strip">
             <div>
               <span class="team-dot home-dot"></span>
@@ -83,13 +83,13 @@
             </div>
           </div>
 
-          <div class="draw-toolbar" role="toolbar" aria-label="描画ツール">
-            <div class="tool-group" role="group" aria-label="モード">
+          <div class="draw-toolbar" role="toolbar" aria-label="描画ツール" data-i18n="nav.drawTools" data-i18n-attr="aria-label">
+            <div class="tool-group" role="group" aria-label="モード" data-i18n="nav.mode" data-i18n-attr="aria-label">
               <button id="toolMoveBtn" class="tool-button" type="button" aria-pressed="true" aria-keyshortcuts="v"><span data-i18n="draw.move">移動</span> <kbd class="kbd-hint">V</kbd></button>
               <button id="toolPenBtn" class="tool-button" type="button" aria-pressed="false" aria-keyshortcuts="p"><span data-i18n="draw.pen">ペン</span> <kbd class="kbd-hint">P</kbd></button>
               <button id="toolArrowBtn" class="tool-button" type="button" aria-pressed="false" aria-keyshortcuts="a"><span data-i18n="draw.arrow">矢印</span> <kbd class="kbd-hint">A</kbd></button>
             </div>
-            <div class="tool-group" role="group" aria-label="線の色">
+            <div class="tool-group" role="group" aria-label="線の色" data-i18n="nav.lineColor" data-i18n-attr="aria-label">
               <button class="color-swatch yellow" type="button" data-color="yellow" aria-label="黄" aria-pressed="true" data-i18n="draw.colorYellow" data-i18n-attr="aria-label"></button>
               <button class="color-swatch red" type="button" data-color="red" aria-label="赤" aria-pressed="false" data-i18n="draw.colorRed" data-i18n-attr="aria-label"></button>
               <button class="color-swatch blue" type="button" data-color="blue" aria-label="青" aria-pressed="false" data-i18n="draw.colorBlue" data-i18n-attr="aria-label"></button>
@@ -102,7 +102,7 @@
           </div>
 
           <div class="field-shell">
-            <div id="field" class="field" aria-label="フィールド">
+            <div id="field" class="field" aria-label="フィールド" data-i18n="nav.pitch" data-i18n-attr="aria-label">
               <div class="field-marking half-line"></div>
               <div class="field-marking center-circle"></div>
               <div class="field-marking center-spot"></div>
@@ -119,7 +119,7 @@
           </div>
         </section>
 
-        <aside id="sidePanel" class="side-panel" aria-label="管理パネル">
+        <aside id="sidePanel" class="side-panel" aria-label="管理パネル" data-i18n="nav.panel" data-i18n-attr="aria-label">
           <section class="panel-section">
             <div class="section-title">
               <h2 data-i18n="panel.selectedTitle">選択中</h2>
