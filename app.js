@@ -207,6 +207,7 @@ function bindEvents() {
       x: 50,
       y: 50,
       dir: 0,
+      sentOff: false,
     });
 
     els.newNumberInput.value = "";
@@ -303,15 +304,19 @@ function saveState() {
 function sanitizeHomePlayers(players) {
   return players
     .filter((player) => player && typeof player === "object")
-    .map((player, index) => ({
-      id: String(player.id || makeId("home")),
-      number: sanitizeNumber(player.number ?? String(index + 1)),
-      name: String(player.name || "").slice(0, 16),
-      onField: Boolean(player.onField),
-      x: clamp(Number(player.x) || 50, 4, 96),
-      y: clamp(Number(player.y) || 50, 6, 94),
-      dir: normalizeDir(player.dir, 0),
-    }));
+    .map((player, index) => {
+      const sentOff = Boolean(player.sentOff);
+      return {
+        id: String(player.id || makeId("home")),
+        number: sanitizeNumber(player.number ?? String(index + 1)),
+        name: String(player.name || "").slice(0, 16),
+        onField: sentOff ? false : Boolean(player.onField),
+        x: clamp(Number(player.x) || 50, 4, 96),
+        y: clamp(Number(player.y) || 50, 6, 94),
+        dir: normalizeDir(player.dir, 0),
+        sentOff,
+      };
+    });
 }
 
 function createDefaultHomePlayers() {
@@ -327,6 +332,7 @@ function createDefaultHomePlayers() {
       x: position[0],
       y: position[1],
       dir: 0,
+      sentOff: false,
     };
   });
 }
@@ -340,6 +346,7 @@ function createDefaultOpponents(formationName) {
     x: 100 - x,
     y,
     dir: 180,
+    sentOff: false,
   }));
 }
 
@@ -357,6 +364,7 @@ function sanitizeOpponents(players, formationName) {
       x: clamp(Number(player.x) || 100 - fallback[0], 4, 96),
       y: clamp(Number(player.y) || fallback[1], 6, 94),
       dir: normalizeDir(player.dir, 180),
+      sentOff: Boolean(player.sentOff),
     };
   });
 }
@@ -424,7 +432,7 @@ function clearSelection() {
 
 function normalizeHomeFieldCount() {
   const starters = state.homePlayers.filter((player) => player.onField);
-  const bench = state.homePlayers.filter((player) => !player.onField);
+  const bench = state.homePlayers.filter((player) => !player.onField && !player.sentOff);
 
   if (starters.length > 11) {
     starters.slice(11).forEach((player) => {
@@ -1241,7 +1249,7 @@ function createPlayerRow({ player, team, actions }) {
 function swapHomePlayers(starterId, benchId) {
   const starter = state.homePlayers.find((player) => player.id === starterId);
   const bench = state.homePlayers.find((player) => player.id === benchId);
-  if (!starter || !bench || !starter.onField || bench.onField) return;
+  if (!starter || !bench || !starter.onField || bench.onField || bench.sentOff) return;
 
   const position = [starter.x, starter.y];
   starter.onField = false;
@@ -1302,11 +1310,23 @@ function findPlayer(team, id) {
 }
 
 function getHomeFieldPlayers() {
-  return state.homePlayers.filter((player) => player.onField);
+  return state.homePlayers.filter((player) => player.onField && !player.sentOff);
 }
 
 function getHomeBenchPlayers() {
-  return state.homePlayers.filter((player) => !player.onField);
+  return state.homePlayers.filter((player) => !player.onField && !player.sentOff);
+}
+
+function getHomeSentOffPlayers() {
+  return state.homePlayers.filter((player) => player.sentOff);
+}
+
+function getActiveOpponents() {
+  return state.opponentPlayers.filter((player) => !player.sentOff);
+}
+
+function getOpponentSentOffPlayers() {
+  return state.opponentPlayers.filter((player) => player.sentOff);
 }
 
 function syncSelectedTokens() {
