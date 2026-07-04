@@ -345,6 +345,8 @@ textarea {
   transform: translate(-50%, -50%);
 }
 
+/* PA・ゴールの寸法値は app.js の戦術ガイド定数（GUIDE_LANE_YS / GUIDE_BIELSA_LINES）と
+   対で揃えている。ここを変える場合は app.js 側も同期すること。 */
 .penalty-box {
   top: 22%;
   width: 15.5%;
@@ -379,6 +381,7 @@ textarea {
   border-right: 0;
 }
 
+/* ゴール位置 44-56% は app.js の GUIDE_BIELSA_LINES（ポスト端点）と対。変更時は要同期。 */
 .goal {
   top: 44%;
   width: 1.6%;
