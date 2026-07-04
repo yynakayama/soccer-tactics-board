@@ -440,16 +440,17 @@ function clearSelection() {
 }
 
 function normalizeHomeFieldCount() {
-  const starters = state.homePlayers.filter((player) => player.onField);
+  const target = 11 - getHomeSentOffPlayers().length;
+  const starters = state.homePlayers.filter((player) => player.onField && !player.sentOff);
   const bench = state.homePlayers.filter((player) => !player.onField && !player.sentOff);
 
-  if (starters.length > 11) {
-    starters.slice(11).forEach((player) => {
+  if (starters.length > target) {
+    starters.slice(target).forEach((player) => {
       player.onField = false;
     });
   }
 
-  while (state.homePlayers.filter((player) => player.onField).length < 11 && bench.length) {
+  while (state.homePlayers.filter((player) => player.onField).length < target && bench.length) {
     const next = bench.shift();
     next.onField = true;
   }
@@ -1370,7 +1371,7 @@ function restorePlayer(team, id) {
 
 function removeHomePlayer(id) {
   const player = state.homePlayers.find((item) => item.id === id);
-  if (!player || player.onField) return;
+  if (!player || player.onField || player.sentOff) return;
   const label = player.name || `No.${displayNumber(player)}`;
   const ok = window.confirm(`${label}を削除しますか？`);
   if (!ok) return;
