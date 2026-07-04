@@ -829,6 +829,7 @@ function startDrag(event) {
     team,
     id,
     pointerId: event.pointerId,
+    pointerType: event.pointerType,
     startX: event.clientX,
     startY: event.clientY,
     moved: false,
@@ -841,6 +842,19 @@ function startDrag(event) {
 
 function moveDrag(event) {
   if (!activeDrag || event.pointerId !== activeDrag.pointerId) return;
+
+  // タップ/ドラッグ判別のしきい値（slop）。指のタッチは接地点が数px揺れるため、
+  // マウス以外は大きめに取り、微小な揺れをタップとして扱う（ダブルタップ成立のため）。
+  const slop = activeDrag.pointerType === "mouse" ? 2 : 10;
+  if (
+    !activeDrag.moved &&
+    Math.abs(event.clientX - activeDrag.startX) <= slop &&
+    Math.abs(event.clientY - activeDrag.startY) <= slop
+  ) {
+    return; // slop 以内: タップ候補としてコマを動かさない
+  }
+  activeDrag.moved = true;
+
   const player = findPlayer(activeDrag.team, activeDrag.id);
   if (!player) return;
 
@@ -850,13 +864,6 @@ function moveDrag(event) {
   const data = fromScreenFraction(fx, fy);
   player.x = clampX(activeDrag.team, data.x);
   player.y = clampY(activeDrag.team, data.y);
-
-  if (
-    Math.abs(event.clientX - activeDrag.startX) > 2 ||
-    Math.abs(event.clientY - activeDrag.startY) > 2
-  ) {
-    activeDrag.moved = true;
-  }
 
   const token = findToken(activeDrag.team, activeDrag.id);
   if (token) {
