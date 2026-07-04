@@ -93,6 +93,8 @@ const els = {
   formationSelect: document.querySelector("#formationSelect"),
   applyFormationBtn: document.querySelector("#applyFormationBtn"),
   toggleOrientationBtn: document.querySelector("#toggleOrientationBtn"),
+  toggleTokenSizeBtn: document.querySelector("#toggleTokenSizeBtn"),
+  tokenSizeLabel: document.querySelector("#tokenSizeLabel"),
   toggleLanesBtn: document.querySelector("#toggleLanesBtn"),
   toggleBielsaBtn: document.querySelector("#toggleBielsaBtn"),
   toggleThirdsBtn: document.querySelector("#toggleThirdsBtn"),
@@ -127,6 +129,8 @@ const els = {
   awaySentOffBadge: document.querySelector("#awaySentOffBadge"),
 };
 
+const TOKEN_SCALES = ["small", "medium", "large"];
+
 let state = {
   formation: DEFAULT_FORMATION,
   homePlayers: [],
@@ -137,7 +141,7 @@ let state = {
   orientation: "horizontal",
   drawings: [],
   guides: { lanes: false, bielsa: false, thirds: false },
-  ui: { headerCollapsed: false },
+  ui: { headerCollapsed: false, tokenScale: "medium" },
 };
 
 let activeDrag = null;
@@ -159,11 +163,13 @@ function init() {
     renderAll();
     applyHeaderCollapsed();
     applyPanelOpen();
+    applyTokenScale();
   });
   applyStaticTranslations();
   renderAll();
   applyHeaderCollapsed();
   applyPanelOpen();
+  applyTokenScale();
   fitBoardSize();
   renderDrawings();
   registerServiceWorker();
@@ -195,6 +201,13 @@ function bindEvents() {
     state.orientation = state.orientation === "vertical" ? "horizontal" : "vertical";
     saveState();
     renderAll();
+  });
+
+  els.toggleTokenSizeBtn.addEventListener("click", () => {
+    const i = TOKEN_SCALES.indexOf(state.ui.tokenScale);
+    state.ui.tokenScale = TOKEN_SCALES[(i + 1) % TOKEN_SCALES.length];
+    saveState();
+    applyTokenScale();
   });
 
   els.toggleLanesBtn.addEventListener("click", () => toggleGuide("lanes"));
@@ -332,7 +345,8 @@ function loadState() {
   state.drawings = sanitizeDrawings(saved?.drawings);
   state.orientation = saved?.orientation === "vertical" ? "vertical" : "horizontal";
   state.guides = sanitizeGuides(saved?.guides);
-  state.ui = { headerCollapsed: Boolean(saved?.ui?.headerCollapsed) };
+  const tokenScale = TOKEN_SCALES.includes(saved?.ui?.tokenScale) ? saved.ui.tokenScale : "medium";
+  state.ui = { headerCollapsed: Boolean(saved?.ui?.headerCollapsed), tokenScale };
   state.selected = null;
 
   if (!state.homePlayers.length) {
@@ -352,7 +366,7 @@ function saveState() {
     notes: state.notes,
     orientation: state.orientation,
     guides: state.guides,
-    ui: { headerCollapsed: state.ui.headerCollapsed },
+    ui: { headerCollapsed: state.ui.headerCollapsed, tokenScale: state.ui.tokenScale },
   };
 
   try {
@@ -562,6 +576,17 @@ function applyOrientation() {
   els.toggleOrientationBtn.title = label;
   els.toggleOrientationBtn.setAttribute("aria-pressed", String(vertical));
   fitBoardSize();
+}
+
+function applyTokenScale() {
+  const scale = state.ui.tokenScale;
+  els.field.setAttribute("data-token-scale", scale);
+  const sizeKey = {
+    small: "toolbar.sizeSmall",
+    medium: "toolbar.sizeMedium",
+    large: "toolbar.sizeLarge",
+  }[scale];
+  els.tokenSizeLabel.textContent = t("toolbar.tokenSizeLabel", { size: t(sizeKey) });
 }
 
 /* 横表示のフィールドが画面の残り高さに収まる最大サイズになるよう、
