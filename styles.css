@@ -29,6 +29,10 @@
 html,
 body {
   min-height: 100%;
+  /* タッチ時にタップ可能要素へ出る既定のタップハイライト（青い四角）を無効化。
+     継承プロパティなのでルートに置けば全要素へ波及する。フォーカス枠は
+     :focus-visible の金色アウトラインで別途担保。 */
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
