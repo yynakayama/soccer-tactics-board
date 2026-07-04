@@ -512,6 +512,33 @@ textarea {
   --arc-color: var(--away-deep);
 }
 
+.player-token .dir-handle {
+  position: absolute;
+  top: calc(var(--token) / 2);
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(10, 20, 14, 0.4);
+  transform: rotate(var(--dir-screen, 0deg)) translateX(calc(var(--token) / 2 + 14px));
+  display: none;
+  cursor: grab;
+  z-index: 2;
+}
+
+.player-token .dir-handle::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+
+.player-token.selected .dir-handle {
+  display: block;
+}
+
 .player-token.selected .number {
   border-color: var(--gold);
   box-shadow:

@@ -90,6 +90,7 @@ let state = {
 };
 
 let activeDrag = null;
+let activeRotate = null;
 
 init();
 
@@ -422,6 +423,11 @@ function createPlayerToken(team, player) {
   arc.className = "dir-arc";
   token.appendChild(arc);
 
+  const handle = document.createElement("span");
+  handle.className = "dir-handle";
+  handle.addEventListener("pointerdown", startRotate);
+  token.appendChild(handle);
+
   token.addEventListener("pointerdown", startDrag);
   token.addEventListener("keydown", nudgeSelectedPlayer);
   return token;
@@ -495,6 +501,45 @@ function endDrag() {
   activeDrag = null;
   window.removeEventListener("pointermove", moveDrag);
   renderFieldPlayers();
+}
+
+function startRotate(event) {
+  if (event.button !== undefined && event.button > 0) return;
+  event.preventDefault();
+  event.stopPropagation();
+
+  const token = event.currentTarget.closest(".player-token");
+  if (!token) return;
+  selectPlayer(token.dataset.team, token.dataset.id);
+
+  activeRotate = {
+    team: token.dataset.team,
+    id: token.dataset.id,
+    token,
+    circle: token.querySelector(".number"),
+  };
+  window.addEventListener("pointermove", moveRotate);
+  window.addEventListener("pointerup", endRotate, { once: true });
+}
+
+function moveRotate(event) {
+  if (!activeRotate) return;
+  const player = findPlayer(activeRotate.team, activeRotate.id);
+  if (!player || !activeRotate.circle) return;
+
+  const rect = activeRotate.circle.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  const screenAngle =
+    (Math.atan2(event.clientY - centerY, event.clientX - centerX) * 180) / Math.PI;
+  player.dir = fromScreenAngle(screenAngle);
+  applyTokenDirection(activeRotate.token, player);
+}
+
+function endRotate() {
+  if (activeRotate) saveState();
+  activeRotate = null;
+  window.removeEventListener("pointermove", moveRotate);
 }
 
 function nudgeSelectedPlayer(event) {
@@ -938,6 +983,11 @@ function applyTokenDirection(token, player) {
 
 function toScreenAngle(dir) {
   return state.orientation === "vertical" ? dir - 90 : dir;
+}
+
+function fromScreenAngle(angle) {
+  const dir = state.orientation === "vertical" ? angle + 90 : angle;
+  return normalizeDir(dir, 0);
 }
 
 function fromScreenFraction(fx, fy) {
