@@ -10,6 +10,17 @@ const DRAW_COLORS = {
 const MAX_STROKES = 300;
 const MAX_STROKE_POINTS = 600;
 
+// 戦術ガイドの形状（横表示の%座標）。既存CSSマーキングの近似値に揃える:
+// PA幅 22-78%・PA奥行き 19% / 81%・ゴール 44-56%。
+const GUIDE_PITCH = { min: 3.5, max: 96.5 };
+const GUIDE_LANE_YS = [22, 40.67, 59.33, 78];
+const GUIDE_BIELSA_LINES = [
+  { from: { x: 3.5, y: 44 }, to: { x: 19, y: 22 } },
+  { from: { x: 3.5, y: 56 }, to: { x: 19, y: 78 } },
+  { from: { x: 96.5, y: 44 }, to: { x: 81, y: 22 } },
+  { from: { x: 96.5, y: 56 }, to: { x: 81, y: 78 } },
+];
+
 const FORMATIONS = {
   "4-4-2": [
     [8, 50],
@@ -83,6 +94,7 @@ const els = {
   boardNotes: document.querySelector("#boardNotes"),
   field: document.querySelector("#field"),
   playersLayer: document.querySelector("#playersLayer"),
+  guidesLayer: document.querySelector("#guidesLayer"),
   drawLayer: document.querySelector("#drawLayer"),
   toolMoveBtn: document.querySelector("#toolMoveBtn"),
   toolPenBtn: document.querySelector("#toolPenBtn"),
@@ -484,6 +496,7 @@ function renderAll() {
   els.boardNotes.value = state.notes;
   renderFieldPlayers();
   renderDrawings();
+  renderGuides();
   renderCounts();
   renderSelectionPanel();
   renderSubstitutionPanel();
@@ -505,6 +518,37 @@ function renderFieldPlayers() {
   els.playersLayer.appendChild(createBallToken());
 
   syncSelectedTokens();
+}
+
+function renderGuides() {
+  const svg = els.guidesLayer;
+  svg.replaceChildren();
+
+  if (state.guides.lanes) {
+    GUIDE_LANE_YS.forEach((y) => {
+      svg.appendChild(
+        createGuideLine({ x: GUIDE_PITCH.min, y }, { x: GUIDE_PITCH.max, y }, "guide-lane"),
+      );
+    });
+  }
+
+  if (state.guides.bielsa) {
+    GUIDE_BIELSA_LINES.forEach((line) => {
+      svg.appendChild(createGuideLine(line.from, line.to, "guide-bielsa"));
+    });
+  }
+}
+
+function createGuideLine(from, to, className) {
+  const a = toScreenPosition(from);
+  const b = toScreenPosition(to);
+  const line = document.createElementNS(SVG_NS, "line");
+  line.setAttribute("x1", `${a.left}%`);
+  line.setAttribute("y1", `${a.top}%`);
+  line.setAttribute("x2", `${b.left}%`);
+  line.setAttribute("y2", `${b.top}%`);
+  line.setAttribute("class", className);
+  return line;
 }
 
 function renderDrawings() {
