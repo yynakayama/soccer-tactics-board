@@ -1,7 +1,7 @@
 # 戦術ガイド表示（5レーン・ビエルサライン・3ゾーン）設計
 
 日付: 2026-07-04
-ステータス: 承認待ち
+ステータス: 承認済み（2026-07-04）。先行していた「選手の向き＋手描き入力」実装のマージ後に本スペックを現行コードへ整合済み
 
 ## 目的
 
@@ -43,10 +43,10 @@
 
 ### レイヤー構成
 
-- `index.html` の `#field` 内、`#playersLayer` の直前に `<svg id="guidesLayer" class="guides-layer" aria-hidden="true"></svg>` を追加
-- CSS: `position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;`
-  - 選手レイヤー（z-index: 2）より下、ピッチ背景・CSSマーキングより上に重なる
-  - `pointer-events: none` により選手・ボールのドラッグ操作を一切妨げない
+- `index.html` の `#field` 内、**`#drawLayer`（手描きSVG）の直前**に `<svg id="guidesLayer" class="guides-layer" aria-hidden="true"></svg>` を追加
+- CSS: `position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;`
+  - 重なり順（下から）: ピッチ背景・CSSマーキング → **ガイド（z-index: 0）** → 手描き線（`.draw-layer` z-index: 1） → 選手（`.players-layer` z-index: 2）。手描きの注釈は常にガイドの上に描かれる
+  - `pointer-events: none` により選手・ボールのドラッグ操作、ペン/矢印の手描き入力を一切妨げない（手描き入力は `.draw-layer` 側で受ける既存挙動のまま）
 
 ### 座標系と縦横対応
 
