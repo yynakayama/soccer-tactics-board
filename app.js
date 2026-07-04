@@ -169,14 +169,7 @@ function bindEvents() {
     resetBoard();
   });
 
-  els.clearSelectionBtn.addEventListener("click", () => {
-    state.selected = null;
-    renderSelectionPanel();
-    renderSubstitutionPanel();
-    renderHomeRoster();
-    renderOpponentRoster();
-    syncSelectedTokens();
-  });
+  els.clearSelectionBtn.addEventListener("click", clearSelection);
 
   els.sortRosterBtn.addEventListener("click", () => {
     state.homePlayers.sort(comparePlayersByNumber);
@@ -235,12 +228,7 @@ function bindEvents() {
     swatch.addEventListener("click", () => setDrawColor(swatch.dataset.color));
   });
 
-  els.undoDrawBtn.addEventListener("click", () => {
-    if (!state.drawings.length) return;
-    state.drawings.pop();
-    saveState();
-    renderDrawings();
-  });
+  els.undoDrawBtn.addEventListener("click", undoDrawing);
 
   els.clearDrawBtn.addEventListener("click", () => {
     if (!state.drawings.length) return;
@@ -422,6 +410,15 @@ function resetBoard() {
   state.notes = "";
   saveState();
   renderAll();
+}
+
+function clearSelection() {
+  state.selected = null;
+  renderSelectionPanel();
+  renderSubstitutionPanel();
+  renderHomeRoster();
+  renderOpponentRoster();
+  syncSelectedTokens();
 }
 
 function normalizeHomeFieldCount() {
@@ -824,6 +821,13 @@ function setDrawColor(color) {
   els.colorSwatches.forEach((swatch) => {
     swatch.setAttribute("aria-pressed", String(swatch.dataset.color === color));
   });
+}
+
+function undoDrawing() {
+  if (!state.drawings.length) return;
+  state.drawings.pop();
+  saveState();
+  renderDrawings();
 }
 
 function startDrawStroke(event) {
