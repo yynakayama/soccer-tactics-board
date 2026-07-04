@@ -69,6 +69,9 @@ const els = {
   formationSelect: document.querySelector("#formationSelect"),
   applyFormationBtn: document.querySelector("#applyFormationBtn"),
   toggleOrientationBtn: document.querySelector("#toggleOrientationBtn"),
+  toggleLanesBtn: document.querySelector("#toggleLanesBtn"),
+  toggleBielsaBtn: document.querySelector("#toggleBielsaBtn"),
+  toggleThirdsBtn: document.querySelector("#toggleThirdsBtn"),
   resetBoardBtn: document.querySelector("#resetBoardBtn"),
   clearSelectionBtn: document.querySelector("#clearSelectionBtn"),
   sortRosterBtn: document.querySelector("#sortRosterBtn"),
@@ -104,6 +107,7 @@ let state = {
   notes: "",
   orientation: "horizontal",
   drawings: [],
+  guides: { lanes: false, bielsa: false, thirds: false },
 };
 
 let activeDrag = null;
@@ -138,6 +142,10 @@ function bindEvents() {
     saveState();
     renderAll();
   });
+
+  els.toggleLanesBtn.addEventListener("click", () => toggleGuide("lanes"));
+  els.toggleBielsaBtn.addEventListener("click", () => toggleGuide("bielsa"));
+  els.toggleThirdsBtn.addEventListener("click", () => toggleGuide("thirds"));
 
   els.resetBoardBtn.addEventListener("click", () => {
     resetBoard();
@@ -256,6 +264,7 @@ function loadState() {
   state.ball = sanitizeBall(saved?.ball);
   state.drawings = sanitizeDrawings(saved?.drawings);
   state.orientation = saved?.orientation === "vertical" ? "vertical" : "horizontal";
+  state.guides = sanitizeGuides(saved?.guides);
   state.selected = null;
 
   if (!state.homePlayers.length) {
@@ -274,6 +283,7 @@ function saveState() {
     drawings: state.drawings,
     notes: state.notes,
     orientation: state.orientation,
+    guides: state.guides,
   };
 
   try {
@@ -352,6 +362,14 @@ function sanitizeBall(ball) {
   return {
     x: clamp(Number(ball?.x) || 50, 2, 98),
     y: clamp(Number(ball?.y) || 50, 2, 98),
+  };
+}
+
+function sanitizeGuides(guides) {
+  return {
+    lanes: guides?.lanes === true,
+    bielsa: guides?.bielsa === true,
+    thirds: guides?.thirds === true,
   };
 }
 
@@ -440,9 +458,28 @@ function applyOrientation() {
   els.toggleOrientationBtn.setAttribute("aria-pressed", String(vertical));
 }
 
+function toggleGuide(key) {
+  state.guides[key] = !state.guides[key];
+  saveState();
+  renderAll();
+}
+
+function applyGuideButtons() {
+  const buttons = [
+    [els.toggleLanesBtn, state.guides.lanes],
+    [els.toggleBielsaBtn, state.guides.bielsa],
+    [els.toggleThirdsBtn, state.guides.thirds],
+  ];
+  buttons.forEach(([button, active]) => {
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
 function renderAll() {
   validateSelection();
   applyOrientation();
+  applyGuideButtons();
   els.formationSelect.value = state.formation;
   els.boardNotes.value = state.notes;
   renderFieldPlayers();

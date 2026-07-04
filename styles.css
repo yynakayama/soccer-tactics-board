@@ -172,6 +172,11 @@ textarea {
   color: var(--ink);
 }
 
+.secondary-button.is-active {
+  background: var(--ink);
+  color: #fff;
+}
+
 .danger-button {
   width: 100%;
   margin-top: 12px;
