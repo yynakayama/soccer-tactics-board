@@ -6,7 +6,7 @@ const SUPPORTED_LOCALES = ["ja", "en"];
 const MESSAGES = {
   ja: {
     // --- 静的（index.html） ---
-    "brand.tagline": "チーム戦術ホワイトボード",
+    "brand.tagline": "チーム戦術ボード",
     "toolbar.formationLabel": "配置",
     "toolbar.apply": "反映",
     "toolbar.lanes": "5レーン",
@@ -83,7 +83,7 @@ const MESSAGES = {
     "aria.opponentName": "相手 名前",
   },
   en: {
-    "brand.tagline": "Team tactics whiteboard",
+    "brand.tagline": "Team tactics board",
     "toolbar.formationLabel": "Formation",
     "toolbar.apply": "Apply",
     "toolbar.lanes": "5 lanes",
