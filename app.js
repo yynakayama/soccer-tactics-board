@@ -110,6 +110,7 @@ const els = {
   clearDrawBtn: document.querySelector("#clearDrawBtn"),
   selectionPanel: document.querySelector("#selectionPanel"),
   substitutionPanel: document.querySelector("#substitutionPanel"),
+  sentOffPanel: document.querySelector("#sentOffPanel"),
   homeRoster: document.querySelector("#homeRoster"),
   opponentRoster: document.querySelector("#opponentRoster"),
   homeFieldCount: document.querySelector("#homeFieldCount"),
@@ -512,6 +513,7 @@ function renderAll() {
   renderCounts();
   renderSelectionPanel();
   renderSubstitutionPanel();
+  renderSentOffPanel();
   renderHomeRoster();
   renderOpponentRoster();
 }
@@ -523,7 +525,7 @@ function renderFieldPlayers() {
     els.playersLayer.appendChild(createPlayerToken("home", player));
   });
 
-  state.opponentPlayers.forEach((player) => {
+  getActiveOpponents().forEach((player) => {
     els.playersLayer.appendChild(createPlayerToken("away", player));
   });
 
@@ -979,7 +981,7 @@ function nudgeSelectedPlayer(event) {
 
 function renderCounts() {
   els.homeFieldCount.textContent = String(getHomeFieldPlayers().length);
-  els.awayFieldCount.textContent = String(state.opponentPlayers.length);
+  els.awayFieldCount.textContent = String(getActiveOpponents().length);
 }
 
 function renderSelectionPanel() {
@@ -1049,6 +1051,18 @@ function renderSelectionPanel() {
   });
 
   card.append(meta, grid);
+
+  const canSendOff =
+    selected.team === "away" || (selected.team === "home" && selected.player.onField);
+  if (canSendOff) {
+    const sendOffBtn = document.createElement("button");
+    sendOffBtn.type = "button";
+    sendOffBtn.className = "danger-button send-off-button";
+    sendOffBtn.textContent = "退場させる";
+    sendOffBtn.addEventListener("click", () => sendOffPlayer(selected.team, selected.player.id));
+    card.appendChild(sendOffBtn);
+  }
+
   els.selectionPanel.appendChild(card);
 }
 
@@ -1100,6 +1114,58 @@ function createSubstitutionList(players, onSwap) {
     }));
   });
   return list;
+}
+
+function renderSentOffPanel() {
+  els.sentOffPanel.replaceChildren();
+  const homeSentOff = getHomeSentOffPlayers();
+  const awaySentOff = getOpponentSentOffPlayers();
+
+  if (!homeSentOff.length && !awaySentOff.length) {
+    els.sentOffPanel.appendChild(emptyState("退場者なし"));
+    return;
+  }
+
+  const list = document.createElement("div");
+  list.className = "roster-list";
+  homeSentOff.forEach((player) => list.appendChild(createSentOffRow("home", player)));
+  awaySentOff.forEach((player) => list.appendChild(createSentOffRow("away", player)));
+  els.sentOffPanel.appendChild(list);
+}
+
+function createSentOffRow(team, player) {
+  const row = document.createElement("div");
+  row.className = "sent-off-row";
+
+  const card = document.createElement("span");
+  card.className = "red-card";
+  card.setAttribute("aria-hidden", "true");
+
+  const pill = document.createElement("span");
+  pill.className = `pill ${team}`;
+  pill.textContent = team === "home" ? "味方" : "相手";
+
+  const badge = document.createElement("div");
+  badge.className = `number-badge ${team}`;
+  badge.textContent = displayNumber(player);
+
+  const name = document.createElement("div");
+  name.className = "player-name";
+  const primary = document.createElement("strong");
+  primary.textContent = team === "home" ? player.name || "名前未登録" : player.name || "相手";
+  name.appendChild(primary);
+
+  const actionWrap = document.createElement("div");
+  actionWrap.className = "row-actions";
+  const restoreBtn = document.createElement("button");
+  restoreBtn.type = "button";
+  restoreBtn.className = "mini-button primary";
+  restoreBtn.textContent = "復帰";
+  restoreBtn.addEventListener("click", () => restorePlayer(team, player.id));
+  actionWrap.appendChild(restoreBtn);
+
+  row.append(card, pill, badge, name, actionWrap);
+  return row;
 }
 
 function renderHomeRoster() {
@@ -1166,7 +1232,7 @@ function createRosterGroup(title, players) {
 
 function renderOpponentRoster() {
   els.opponentRoster.replaceChildren();
-  state.opponentPlayers.forEach((player) => {
+  getActiveOpponents().forEach((player) => {
     const row = document.createElement("div");
     row.className = "opponent-row";
     if (isSelected("away", player.id)) row.classList.add("selected");
@@ -1257,6 +1323,27 @@ function swapHomePlayers(starterId, benchId) {
   bench.x = position[0];
   bench.y = position[1];
   state.selected = { team: "home", id: bench.id };
+  saveState();
+  renderAll();
+}
+
+function sendOffPlayer(team, id) {
+  const player = findPlayer(team, id);
+  if (!player || player.sentOff) return;
+  if (team === "home") {
+    if (!player.onField) return;
+    player.onField = false;
+  }
+  player.sentOff = true;
+  state.selected = null;
+  saveState();
+  renderAll();
+}
+
+function restorePlayer(team, id) {
+  const player = findPlayer(team, id);
+  if (!player || !player.sentOff) return;
+  player.sentOff = false;
   saveState();
   renderAll();
 }
