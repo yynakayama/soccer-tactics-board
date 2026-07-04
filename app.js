@@ -242,6 +242,7 @@ function bindEvents() {
   els.drawLayer.addEventListener("pointerdown", startDrawStroke);
 
   window.addEventListener("resize", renderDrawings);
+  window.addEventListener("keydown", handleShortcut);
 }
 
 function loadState() {
@@ -828,6 +829,60 @@ function undoDrawing() {
   state.drawings.pop();
   saveState();
   renderDrawings();
+}
+
+function handleShortcut(event) {
+  if (event.isComposing) return;
+
+  const target = event.target;
+  const tag = target && target.tagName;
+  const isTextField =
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    tag === "SELECT" ||
+    (target && target.isContentEditable);
+
+  // Ctrl/Cmd+Z: 描画を1つ戻す（入力欄では標準のテキストundoに任せる）
+  if (
+    (event.ctrlKey || event.metaKey) &&
+    !event.altKey &&
+    !event.shiftKey &&
+    event.key.toLowerCase() === "z"
+  ) {
+    if (isTextField) return;
+    event.preventDefault();
+    undoDrawing();
+    return;
+  }
+
+  // 単キー系（修飾キーなしのみ、入力欄では無効）
+  if (event.ctrlKey || event.metaKey || event.altKey) return;
+  if (isTextField) return;
+
+  switch (event.key) {
+    case "v":
+    case "V":
+      setDrawTool("move");
+      break;
+    case "p":
+    case "P":
+      setDrawTool("pen");
+      break;
+    case "a":
+    case "A":
+      setDrawTool("arrow");
+      break;
+    case "r":
+    case "R":
+      resetBoard();
+      break;
+    case "Escape":
+      clearSelection();
+      break;
+    default:
+      return;
+  }
+  event.preventDefault();
 }
 
 function startDrawStroke(event) {
