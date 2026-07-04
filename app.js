@@ -20,6 +20,12 @@ const GUIDE_BIELSA_LINES = [
   { from: { x: 96.5, y: 44 }, to: { x: 81, y: 22 } },
   { from: { x: 96.5, y: 56 }, to: { x: 81, y: 78 } },
 ];
+const GUIDE_THIRDS = [
+  { from: 3.5, to: 34.5, className: "guide-third defensive" },
+  { from: 34.5, to: 65.5, className: "guide-third middle" },
+  { from: 65.5, to: 96.5, className: "guide-third attacking" },
+];
+const GUIDE_THIRD_LINE_XS = [34.5, 65.5];
 
 const FORMATIONS = {
   "4-4-2": [
@@ -524,6 +530,17 @@ function renderGuides() {
   const svg = els.guidesLayer;
   svg.replaceChildren();
 
+  if (state.guides.thirds) {
+    GUIDE_THIRDS.forEach((third) => {
+      svg.appendChild(createGuideRect(third.from, third.to, third.className));
+    });
+    GUIDE_THIRD_LINE_XS.forEach((x) => {
+      svg.appendChild(
+        createGuideLine({ x, y: GUIDE_PITCH.min }, { x, y: GUIDE_PITCH.max }, "guide-third-line"),
+      );
+    });
+  }
+
   if (state.guides.lanes) {
     GUIDE_LANE_YS.forEach((y) => {
       svg.appendChild(
@@ -549,6 +566,18 @@ function createGuideLine(from, to, className) {
   line.setAttribute("y2", `${b.top}%`);
   line.setAttribute("class", className);
   return line;
+}
+
+function createGuideRect(fromX, toX, className) {
+  const a = toScreenPosition({ x: fromX, y: GUIDE_PITCH.min });
+  const b = toScreenPosition({ x: toX, y: GUIDE_PITCH.max });
+  const rect = document.createElementNS(SVG_NS, "rect");
+  rect.setAttribute("x", `${Math.min(a.left, b.left)}%`);
+  rect.setAttribute("y", `${Math.min(a.top, b.top)}%`);
+  rect.setAttribute("width", `${Math.abs(b.left - a.left)}%`);
+  rect.setAttribute("height", `${Math.abs(b.top - a.top)}%`);
+  rect.setAttribute("class", className);
+  return rect;
 }
 
 function renderDrawings() {

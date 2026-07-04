@@ -503,6 +503,27 @@ textarea {
   stroke-dasharray: 8 6;
 }
 
+.guides-layer .guide-third {
+  stroke: none;
+}
+
+.guides-layer .guide-third.defensive {
+  fill: rgba(31, 99, 209, 0.13);
+}
+
+.guides-layer .guide-third.middle {
+  fill: rgba(240, 201, 76, 0.1);
+}
+
+.guides-layer .guide-third.attacking {
+  fill: rgba(215, 66, 63, 0.13);
+}
+
+.guides-layer .guide-third-line {
+  stroke: rgba(255, 255, 255, 0.35);
+  stroke-width: 1.5px;
+}
+
 .draw-layer {
   position: absolute;
   inset: 0;
