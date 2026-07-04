@@ -90,7 +90,7 @@
           </div>
         </section>
 
-        <aside class="side-panel" aria-label="管理パネル">
+        <aside id="sidePanel" class="side-panel" aria-label="管理パネル">
           <section class="panel-section">
             <div class="section-title">
               <h2>選択中</h2>
@@ -143,6 +143,9 @@
           </section>
         </aside>
       </main>
+
+      <button id="togglePanelBtn" class="panel-toggle" type="button" aria-expanded="false" aria-controls="sidePanel" aria-label="管理パネルを開く">パネル</button>
+      <div id="panelScrim" class="panel-scrim"></div>
     </div>
 
     <script src="./app.js"></script>

@@ -1085,3 +1085,80 @@ textarea {
 .app-header.is-collapsed .brand p {
   display: none;
 }
+
+/* --- ② パネルをレイアウトから外し盤面を全幅に --- */
+.layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* 横フィールドが縦に伸びすぎないよう、タブレット/デスクトップで盤面カラムの最大幅を
+   制限し中央寄せ。グリッドアイテム(.board-area)に効かせることで、内側の .field-shell /
+   .field(width:100% + aspect-ratio) が正しく追従する。 */
+@media (min-width: 681px) {
+  .board-area {
+    max-width: min(100%, calc((100vh - 200px) * 1.5441));
+    margin-inline: auto;
+  }
+}
+
+/* --- ② 側面パネル: 右スライドのかぶせ型ドロワー --- */
+.side-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 40;
+  width: min(380px, 88vw);
+  height: 100vh;
+  border-radius: 0;
+  border-left: 1px solid var(--line);
+  box-shadow: -14px 0 36px rgba(30, 46, 37, 0.22);
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  pointer-events: none;
+}
+
+.side-panel.is-open {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.panel-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(20, 28, 24, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.panel-scrim.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.panel-toggle {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  z-index: 35;
+  transform: translateY(-50%);
+  writing-mode: vertical-rl;
+  min-width: 40px;
+  min-height: 96px;
+  padding: 14px 9px;
+  border-radius: 12px 0 0 12px;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 2px;
+  box-shadow: var(--shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .side-panel,
+  .panel-scrim {
+    transition: none;
+  }
+}

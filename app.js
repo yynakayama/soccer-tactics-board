@@ -85,6 +85,9 @@ const FORMATIONS = {
 const els = {
   appHeader: document.querySelector(".app-header"),
   toggleHeaderBtn: document.querySelector("#toggleHeaderBtn"),
+  sidePanel: document.querySelector("#sidePanel"),
+  togglePanelBtn: document.querySelector("#togglePanelBtn"),
+  panelScrim: document.querySelector("#panelScrim"),
   formationSelect: document.querySelector("#formationSelect"),
   applyFormationBtn: document.querySelector("#applyFormationBtn"),
   toggleOrientationBtn: document.querySelector("#toggleOrientationBtn"),
@@ -139,6 +142,7 @@ let activeRotate = null;
 let activeStroke = null;
 let drawTool = "move";
 let drawColor = "yellow";
+let panelOpen = false;
 
 init();
 
@@ -147,6 +151,7 @@ function init() {
   bindEvents();
   renderAll();
   applyHeaderCollapsed();
+  applyPanelOpen();
 }
 
 function bindEvents() {
@@ -181,6 +186,9 @@ function bindEvents() {
     applyHeaderCollapsed();
     saveState();
   });
+
+  els.togglePanelBtn.addEventListener("click", () => setPanelOpen(!panelOpen));
+  els.panelScrim.addEventListener("click", () => setPanelOpen(false));
 
   els.clearSelectionBtn.addEventListener("click", clearSelection);
 
@@ -513,6 +521,22 @@ function applyHeaderCollapsed() {
     "aria-label",
     collapsed ? "ツールバーを表示" : "ツールバーを隠す",
   );
+}
+
+function applyPanelOpen() {
+  els.sidePanel.classList.toggle("is-open", panelOpen);
+  els.panelScrim.classList.toggle("is-visible", panelOpen);
+  els.togglePanelBtn.setAttribute("aria-expanded", String(panelOpen));
+  els.togglePanelBtn.setAttribute(
+    "aria-label",
+    panelOpen ? "管理パネルを閉じる" : "管理パネルを開く",
+  );
+  if (panelOpen) els.sidePanel.scrollTop = 0;
+}
+
+function setPanelOpen(open) {
+  panelOpen = open;
+  applyPanelOpen();
 }
 
 function toggleGuide(key) {
