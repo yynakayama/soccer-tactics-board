@@ -42,6 +42,7 @@ const MESSAGES = {
     "notes.placeholder": "今日の狙い、交代案、セットプレーなど",
     "panel.open": "管理パネルを開く",
     "panel.close": "管理パネルを閉じる",
+    "hint.doubleTap": "選手をダブルタップで管理パネル",
     "panel.toggleLabel": "パネル",
     // --- ランドマーク aria-label（静的 index.html） ---
     "nav.boardControls": "ボード操作",
@@ -118,6 +119,7 @@ const MESSAGES = {
     "notes.placeholder": "Game plan, subs, set pieces…",
     "panel.open": "Open panel",
     "panel.close": "Close panel",
+    "hint.doubleTap": "Double-tap a player to open the panel",
     "panel.toggleLabel": "Panel",
     "nav.boardControls": "Board controls",
     "nav.field": "Soccer field",

@@ -340,6 +340,13 @@ textarea {
   box-shadow: var(--shadow);
 }
 
+.board-hint {
+  margin: 0.5rem 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .field {
   position: relative;
   width: 100%;
