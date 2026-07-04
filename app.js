@@ -187,6 +187,7 @@ function bindEvents() {
       onField: false,
       x: 50,
       y: 50,
+      dir: 0,
     });
 
     els.newNumberInput.value = "";
@@ -613,6 +614,7 @@ function startDrag(event) {
 
   window.addEventListener("pointermove", moveDrag);
   window.addEventListener("pointerup", endDrag);
+  window.addEventListener("pointercancel", endDrag);
 }
 
 function moveDrag(event) {
@@ -649,6 +651,7 @@ function endDrag(event) {
   activeDrag = null;
   window.removeEventListener("pointermove", moveDrag);
   window.removeEventListener("pointerup", endDrag);
+  window.removeEventListener("pointercancel", endDrag);
   renderFieldPlayers();
 }
 
@@ -669,6 +672,7 @@ function startRotate(event) {
   };
   window.addEventListener("pointermove", moveRotate);
   window.addEventListener("pointerup", endRotate);
+  window.addEventListener("pointercancel", endRotate);
 }
 
 function moveRotate(event) {
@@ -693,6 +697,7 @@ function endRotate(event) {
   activeRotate = null;
   window.removeEventListener("pointermove", moveRotate);
   window.removeEventListener("pointerup", endRotate);
+  window.removeEventListener("pointercancel", endRotate);
 }
 
 function setDrawTool(tool) {
@@ -704,7 +709,7 @@ function setDrawTool(tool) {
 }
 
 function setDrawColor(color) {
-  if (!DRAW_COLORS[color]) return;
+  if (!Object.hasOwn(DRAW_COLORS, color)) return;
   drawColor = color;
   els.colorSwatches.forEach((swatch) => {
     swatch.setAttribute("aria-pressed", String(swatch.dataset.color === color));
@@ -746,7 +751,12 @@ function endDrawStroke(event) {
   els.drawLayer.removeEventListener("pointerup", endDrawStroke);
   els.drawLayer.removeEventListener("pointercancel", endDrawStroke);
   if (activeStroke.points.length >= 2 && state.drawings.length < MAX_STROKES) {
-    state.drawings.push(activeStroke);
+    state.drawings.push({
+      id: activeStroke.id,
+      tool: activeStroke.tool,
+      color: activeStroke.color,
+      points: activeStroke.points,
+    });
     saveState();
   }
   activeStroke = null;
@@ -1197,7 +1207,7 @@ function setTokenPosition(token, entity) {
 }
 
 function applyTokenDirection(token, player) {
-  token.style.setProperty("--dir-screen", `${toScreenAngle(player.dir)}deg`);
+  token.style.setProperty("--dir-screen", `${toScreenAngle(normalizeDir(player.dir, 0))}deg`);
 }
 
 function toScreenAngle(dir) {
