@@ -457,6 +457,7 @@ function clearSelection() {
   renderHomeRoster();
   renderOpponentRoster();
   syncSelectedTokens();
+  setPanelOpen(false);
 }
 
 function normalizeHomeFieldCount() {
@@ -1437,6 +1438,7 @@ function selectPlayer(team, id) {
   renderHomeRoster();
   renderOpponentRoster();
   syncSelectedTokens();
+  setPanelOpen(true);
 }
 
 function validateSelection() {
