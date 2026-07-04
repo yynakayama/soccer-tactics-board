@@ -32,7 +32,7 @@
           <button id="toggleLanesBtn" class="secondary-button" type="button" aria-pressed="false">5レーン</button>
           <button id="toggleBielsaBtn" class="secondary-button" type="button" aria-pressed="false">ビエルサライン</button>
           <button id="toggleThirdsBtn" class="secondary-button" type="button" aria-pressed="false">3ゾーン</button>
-          <button id="resetBoardBtn" class="primary-button" type="button">ボードリセット</button>
+          <button id="resetBoardBtn" class="primary-button" type="button" aria-keyshortcuts="r">ボードリセット <kbd class="kbd-hint">R</kbd></button>
         </div>
       </header>
 
@@ -51,9 +51,9 @@
 
           <div class="draw-toolbar" role="toolbar" aria-label="描画ツール">
             <div class="tool-group" role="group" aria-label="モード">
-              <button id="toolMoveBtn" class="tool-button" type="button" aria-pressed="true">移動</button>
-              <button id="toolPenBtn" class="tool-button" type="button" aria-pressed="false">ペン</button>
-              <button id="toolArrowBtn" class="tool-button" type="button" aria-pressed="false">矢印</button>
+              <button id="toolMoveBtn" class="tool-button" type="button" aria-pressed="true" aria-keyshortcuts="v">移動 <kbd class="kbd-hint">V</kbd></button>
+              <button id="toolPenBtn" class="tool-button" type="button" aria-pressed="false" aria-keyshortcuts="p">ペン <kbd class="kbd-hint">P</kbd></button>
+              <button id="toolArrowBtn" class="tool-button" type="button" aria-pressed="false" aria-keyshortcuts="a">矢印 <kbd class="kbd-hint">A</kbd></button>
             </div>
             <div class="tool-group" role="group" aria-label="線の色">
               <button class="color-swatch yellow" type="button" data-color="yellow" aria-label="黄" aria-pressed="true"></button>
@@ -62,7 +62,7 @@
               <button class="color-swatch white" type="button" data-color="white" aria-label="白" aria-pressed="false"></button>
             </div>
             <div class="tool-group">
-              <button id="undoDrawBtn" class="tool-button" type="button">1つ戻す</button>
+              <button id="undoDrawBtn" class="tool-button" type="button" aria-keyshortcuts="Control+z">1つ戻す <kbd class="kbd-hint">Ctrl+Z</kbd></button>
               <button id="clearDrawBtn" class="tool-button" type="button">全消去</button>
             </div>
           </div>
@@ -89,7 +89,7 @@
           <section class="panel-section">
             <div class="section-title">
               <h2>選択中</h2>
-              <button id="clearSelectionBtn" class="text-button" type="button">解除</button>
+              <button id="clearSelectionBtn" class="text-button" type="button" aria-keyshortcuts="Escape">解除 <kbd class="kbd-hint">Esc</kbd></button>
             </div>
             <div id="selectionPanel"></div>
           </section>
