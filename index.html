@@ -46,6 +46,24 @@
             </div>
           </div>
 
+          <div class="draw-toolbar" aria-label="描画ツール">
+            <div class="tool-group" role="group" aria-label="モード">
+              <button id="toolMoveBtn" class="tool-button" type="button" aria-pressed="true">移動</button>
+              <button id="toolPenBtn" class="tool-button" type="button" aria-pressed="false">ペン</button>
+              <button id="toolArrowBtn" class="tool-button" type="button" aria-pressed="false">矢印</button>
+            </div>
+            <div class="tool-group" role="group" aria-label="線の色">
+              <button class="color-swatch yellow" type="button" data-color="yellow" aria-label="黄" aria-pressed="true"></button>
+              <button class="color-swatch red" type="button" data-color="red" aria-label="赤" aria-pressed="false"></button>
+              <button class="color-swatch blue" type="button" data-color="blue" aria-label="青" aria-pressed="false"></button>
+              <button class="color-swatch white" type="button" data-color="white" aria-label="白" aria-pressed="false"></button>
+            </div>
+            <div class="tool-group">
+              <button id="undoDrawBtn" class="tool-button" type="button">1つ戻す</button>
+              <button id="clearDrawBtn" class="tool-button" type="button">全消去</button>
+            </div>
+          </div>
+
           <div class="field-shell">
             <div id="field" class="field" aria-label="フィールド">
               <div class="field-marking half-line"></div>

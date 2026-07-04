@@ -81,6 +81,12 @@ const els = {
   field: document.querySelector("#field"),
   playersLayer: document.querySelector("#playersLayer"),
   drawLayer: document.querySelector("#drawLayer"),
+  toolMoveBtn: document.querySelector("#toolMoveBtn"),
+  toolPenBtn: document.querySelector("#toolPenBtn"),
+  toolArrowBtn: document.querySelector("#toolArrowBtn"),
+  colorSwatches: document.querySelectorAll(".color-swatch"),
+  undoDrawBtn: document.querySelector("#undoDrawBtn"),
+  clearDrawBtn: document.querySelector("#clearDrawBtn"),
   selectionPanel: document.querySelector("#selectionPanel"),
   substitutionPanel: document.querySelector("#substitutionPanel"),
   homeRoster: document.querySelector("#homeRoster"),
@@ -103,6 +109,8 @@ let state = {
 let activeDrag = null;
 let activeRotate = null;
 let activeStroke = null;
+let drawTool = "move";
+let drawColor = "yellow";
 
 init();
 
@@ -191,6 +199,32 @@ function bindEvents() {
     state.notes = els.boardNotes.value;
     saveState();
   });
+
+  els.toolMoveBtn.addEventListener("click", () => setDrawTool("move"));
+  els.toolPenBtn.addEventListener("click", () => setDrawTool("pen"));
+  els.toolArrowBtn.addEventListener("click", () => setDrawTool("arrow"));
+
+  els.colorSwatches.forEach((swatch) => {
+    swatch.addEventListener("click", () => setDrawColor(swatch.dataset.color));
+  });
+
+  els.undoDrawBtn.addEventListener("click", () => {
+    if (!state.drawings.length) return;
+    state.drawings.pop();
+    saveState();
+    renderDrawings();
+  });
+
+  els.clearDrawBtn.addEventListener("click", () => {
+    if (!state.drawings.length) return;
+    const ok = window.confirm("描いた線をすべて消しますか？");
+    if (!ok) return;
+    state.drawings = [];
+    saveState();
+    renderDrawings();
+  });
+
+  els.drawLayer.addEventListener("pointerdown", startDrawStroke);
 
   window.addEventListener("resize", renderDrawings);
 }
@@ -659,6 +693,69 @@ function endRotate(event) {
   activeRotate = null;
   window.removeEventListener("pointermove", moveRotate);
   window.removeEventListener("pointerup", endRotate);
+}
+
+function setDrawTool(tool) {
+  drawTool = tool;
+  els.toolMoveBtn.setAttribute("aria-pressed", String(tool === "move"));
+  els.toolPenBtn.setAttribute("aria-pressed", String(tool === "pen"));
+  els.toolArrowBtn.setAttribute("aria-pressed", String(tool === "arrow"));
+  els.field.classList.toggle("draw-mode", tool !== "move");
+}
+
+function setDrawColor(color) {
+  if (!DRAW_COLORS[color]) return;
+  drawColor = color;
+  els.colorSwatches.forEach((swatch) => {
+    swatch.setAttribute("aria-pressed", String(swatch.dataset.color === color));
+  });
+}
+
+function startDrawStroke(event) {
+  if (drawTool === "move") return;
+  if (event.button !== undefined && event.button > 0) return;
+  event.preventDefault();
+
+  activeStroke = {
+    id: makeId("draw"),
+    tool: drawTool,
+    color: drawColor,
+    points: [drawPointFromEvent(event)],
+  };
+  els.drawLayer.setPointerCapture(event.pointerId);
+  els.drawLayer.addEventListener("pointermove", moveDrawStroke);
+  els.drawLayer.addEventListener("pointerup", endDrawStroke);
+  els.drawLayer.addEventListener("pointercancel", endDrawStroke);
+}
+
+function moveDrawStroke(event) {
+  if (!activeStroke) return;
+  if (activeStroke.points.length >= MAX_STROKE_POINTS) return;
+  const point = drawPointFromEvent(event);
+  const last = activeStroke.points[activeStroke.points.length - 1];
+  if (Math.hypot(point.x - last.x, point.y - last.y) < 0.8) return;
+  activeStroke.points.push(point);
+  renderDrawings();
+}
+
+function endDrawStroke() {
+  els.drawLayer.removeEventListener("pointermove", moveDrawStroke);
+  els.drawLayer.removeEventListener("pointerup", endDrawStroke);
+  els.drawLayer.removeEventListener("pointercancel", endDrawStroke);
+  if (activeStroke && activeStroke.points.length >= 2 && state.drawings.length < MAX_STROKES) {
+    state.drawings.push(activeStroke);
+    saveState();
+  }
+  activeStroke = null;
+  renderDrawings();
+}
+
+function drawPointFromEvent(event) {
+  const rect = els.drawLayer.getBoundingClientRect();
+  const fx = clamp(((event.clientX - rect.left) / rect.width) * 100, 0, 100);
+  const fy = clamp(((event.clientY - rect.top) / rect.height) * 100, 0, 100);
+  const data = fromScreenFraction(fx, fy);
+  return { x: clamp(data.x, 0, 100), y: clamp(data.y, 0, 100) };
 }
 
 function nudgeSelectedPlayer(event) {
