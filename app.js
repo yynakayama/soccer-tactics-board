@@ -449,6 +449,7 @@ function createBallToken() {
 
 function startDrag(event) {
   if (event.button !== undefined && event.button > 0) return;
+  if (activeDrag || activeRotate) return;
   event.preventDefault();
 
   const token = event.currentTarget;
@@ -459,17 +460,18 @@ function startDrag(event) {
   activeDrag = {
     team,
     id,
+    pointerId: event.pointerId,
     startX: event.clientX,
     startY: event.clientY,
     moved: false,
   };
 
   window.addEventListener("pointermove", moveDrag);
-  window.addEventListener("pointerup", endDrag, { once: true });
+  window.addEventListener("pointerup", endDrag);
 }
 
 function moveDrag(event) {
-  if (!activeDrag) return;
+  if (!activeDrag || event.pointerId !== activeDrag.pointerId) return;
   const player = findPlayer(activeDrag.team, activeDrag.id);
   if (!player) return;
 
@@ -494,17 +496,20 @@ function moveDrag(event) {
   }
 }
 
-function endDrag() {
-  if (activeDrag?.moved) {
+function endDrag(event) {
+  if (!activeDrag || event.pointerId !== activeDrag.pointerId) return;
+  if (activeDrag.moved) {
     saveState();
   }
   activeDrag = null;
   window.removeEventListener("pointermove", moveDrag);
+  window.removeEventListener("pointerup", endDrag);
   renderFieldPlayers();
 }
 
 function startRotate(event) {
   if (event.button !== undefined && event.button > 0) return;
+  if (activeDrag || activeRotate) return;
   event.preventDefault();
   event.stopPropagation();
 
@@ -515,31 +520,34 @@ function startRotate(event) {
   activeRotate = {
     team: token.dataset.team,
     id: token.dataset.id,
-    token,
-    circle: token.querySelector(".number"),
+    pointerId: event.pointerId,
   };
   window.addEventListener("pointermove", moveRotate);
-  window.addEventListener("pointerup", endRotate, { once: true });
+  window.addEventListener("pointerup", endRotate);
 }
 
 function moveRotate(event) {
-  if (!activeRotate) return;
+  if (!activeRotate || event.pointerId !== activeRotate.pointerId) return;
   const player = findPlayer(activeRotate.team, activeRotate.id);
-  if (!player || !activeRotate.circle) return;
+  const token = findToken(activeRotate.team, activeRotate.id);
+  const circle = token ? token.querySelector(".number") : null;
+  if (!player || !token || !circle) return;
 
-  const rect = activeRotate.circle.getBoundingClientRect();
+  const rect = circle.getBoundingClientRect();
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
   const screenAngle =
     (Math.atan2(event.clientY - centerY, event.clientX - centerX) * 180) / Math.PI;
   player.dir = fromScreenAngle(screenAngle);
-  applyTokenDirection(activeRotate.token, player);
+  applyTokenDirection(token, player);
 }
 
-function endRotate() {
-  if (activeRotate) saveState();
+function endRotate(event) {
+  if (!activeRotate || event.pointerId !== activeRotate.pointerId) return;
+  saveState();
   activeRotate = null;
   window.removeEventListener("pointermove", moveRotate);
+  window.removeEventListener("pointerup", endRotate);
 }
 
 function nudgeSelectedPlayer(event) {
