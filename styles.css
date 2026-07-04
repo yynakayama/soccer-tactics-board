@@ -1073,6 +1073,30 @@ textarea {
   font-weight: 800;
 }
 
+/* 言語切替: タイトル横に置くコンパクトなゴーストピル。
+   操作用の .secondary-button より一段控えめ・小さめの utility として扱う。 */
+.lang-toggle {
+  flex: none;
+  min-height: 26px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.lang-toggle:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+  background: #eef3f0;
+}
+
 .app-header.is-collapsed {
   padding-top: 10px;
   padding-bottom: 10px;
