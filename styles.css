@@ -1048,3 +1048,40 @@ textarea {
     margin-inline: auto;
   }
 }
+
+/* ===== ヘッダー/側面パネルのしまい込み =====
+   衝突回避のため末尾追記（append-only）でCSSの後勝ちを利用して上書きする。 */
+
+/* --- ① ヘッダーの折りたたみ --- */
+.header-lead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.header-toggle {
+  flex: none;
+  min-width: 38px;
+  min-height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #e7eee9;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.app-header.is-collapsed {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.app-header.is-collapsed .toolbar {
+  display: none;
+}
+
+.app-header.is-collapsed .brand p {
+  display: none;
+}

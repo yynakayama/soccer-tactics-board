@@ -9,15 +9,18 @@
   <body>
     <div class="app">
       <header class="app-header">
-        <div class="brand">
-          <div class="brand-mark" aria-hidden="true">SB</div>
-          <div>
-            <h1>Soccer Board</h1>
-            <p>チーム戦術ホワイトボード</p>
+        <div class="header-lead">
+          <div class="brand">
+            <div class="brand-mark" aria-hidden="true">SB</div>
+            <div>
+              <h1>Soccer Board</h1>
+              <p>チーム戦術ホワイトボード</p>
+            </div>
           </div>
+          <button id="toggleHeaderBtn" class="header-toggle" type="button" aria-expanded="true" aria-controls="headerToolbar" aria-label="ツールバーを隠す">▾</button>
         </div>
 
-        <div class="toolbar" aria-label="ボード操作">
+        <div class="toolbar" id="headerToolbar" aria-label="ボード操作">
           <label class="select-control">
             <span>配置</span>
             <select id="formationSelect">

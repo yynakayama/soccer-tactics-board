@@ -83,6 +83,8 @@ const FORMATIONS = {
 };
 
 const els = {
+  appHeader: document.querySelector(".app-header"),
+  toggleHeaderBtn: document.querySelector("#toggleHeaderBtn"),
   formationSelect: document.querySelector("#formationSelect"),
   applyFormationBtn: document.querySelector("#applyFormationBtn"),
   toggleOrientationBtn: document.querySelector("#toggleOrientationBtn"),
@@ -129,6 +131,7 @@ let state = {
   orientation: "horizontal",
   drawings: [],
   guides: { lanes: false, bielsa: false, thirds: false },
+  ui: { headerCollapsed: false },
 };
 
 let activeDrag = null;
@@ -143,6 +146,7 @@ function init() {
   loadState();
   bindEvents();
   renderAll();
+  applyHeaderCollapsed();
 }
 
 function bindEvents() {
@@ -170,6 +174,12 @@ function bindEvents() {
 
   els.resetBoardBtn.addEventListener("click", () => {
     resetBoard();
+  });
+
+  els.toggleHeaderBtn.addEventListener("click", () => {
+    state.ui.headerCollapsed = !state.ui.headerCollapsed;
+    applyHeaderCollapsed();
+    saveState();
   });
 
   els.clearSelectionBtn.addEventListener("click", clearSelection);
@@ -276,6 +286,7 @@ function loadState() {
   state.drawings = sanitizeDrawings(saved?.drawings);
   state.orientation = saved?.orientation === "vertical" ? "vertical" : "horizontal";
   state.guides = sanitizeGuides(saved?.guides);
+  state.ui = { headerCollapsed: Boolean(saved?.ui?.headerCollapsed) };
   state.selected = null;
 
   if (!state.homePlayers.length) {
@@ -295,6 +306,7 @@ function saveState() {
     notes: state.notes,
     orientation: state.orientation,
     guides: state.guides,
+    ui: { headerCollapsed: state.ui.headerCollapsed },
   };
 
   try {
@@ -490,6 +502,17 @@ function applyOrientation() {
   els.field.classList.toggle("vertical", vertical);
   els.toggleOrientationBtn.textContent = vertical ? "横表示" : "縦表示";
   els.toggleOrientationBtn.setAttribute("aria-pressed", String(vertical));
+}
+
+function applyHeaderCollapsed() {
+  const collapsed = state.ui.headerCollapsed;
+  els.appHeader.classList.toggle("is-collapsed", collapsed);
+  els.toggleHeaderBtn.textContent = collapsed ? "▸" : "▾";
+  els.toggleHeaderBtn.setAttribute("aria-expanded", String(!collapsed));
+  els.toggleHeaderBtn.setAttribute(
+    "aria-label",
+    collapsed ? "ツールバーを表示" : "ツールバーを隠す",
+  );
 }
 
 function toggleGuide(key) {
