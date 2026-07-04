@@ -610,8 +610,20 @@ textarea {
   z-index: 2;
 }
 
+/* 選手・ボールの表示サイズ3段階。#field の data-token-scale で切り替える倍率。
+   子孫の .player-token / .ball-token が継承して --token / --ball に乗算する。 */
+.field[data-token-scale="small"] {
+  --token-scale: 0.7;
+}
+.field[data-token-scale="medium"] {
+  --token-scale: 1;
+}
+.field[data-token-scale="large"] {
+  --token-scale: 1.4;
+}
+
 .player-token {
-  --token: 46px;
+  --token: calc(46px * var(--token-scale, 1));
   position: absolute;
   width: var(--token);
   min-width: var(--token);
@@ -657,7 +669,7 @@ textarea {
   border-radius: 5px;
   background: rgba(20, 28, 24, 0.72);
   color: #fff;
-  font-size: 0.7rem;
+  font-size: calc(0.7rem * var(--token-scale, 1));
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -728,7 +740,7 @@ textarea {
 }
 
 .ball-token {
-  --ball: 26px;
+  --ball: calc(26px * var(--token-scale, 1));
   position: absolute;
   width: var(--ball);
   height: var(--ball);
@@ -1062,16 +1074,16 @@ textarea {
   }
 
   .player-token {
-    --token: 38px;
+    --token: calc(38px * var(--token-scale, 1));
   }
 
   .ball-token {
-    --ball: 22px;
+    --ball: calc(22px * var(--token-scale, 1));
   }
 
   .player-token .name-tag {
     max-width: 70px;
-    font-size: 0.64rem;
+    font-size: calc(0.64rem * var(--token-scale, 1));
   }
 
   .add-player-form {
