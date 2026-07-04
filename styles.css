@@ -12,6 +12,9 @@
   --away: #d7423f;
   --away-deep: #9d2927;
   --gold: #f0c94c;
+  /* トグルON時のアクセント。ピッチ緑の補色寄りのバーントオレンジ。
+     白文字とのコントラストは AA を満たす（約4.6:1）。 */
+  --accent: #c05621;
   --danger: #b43a31;
   --shadow: 0 18px 48px rgba(30, 46, 37, 0.16);
   font-family:
@@ -177,8 +180,41 @@ textarea {
 }
 
 .secondary-button.is-active {
-  background: var(--ink);
+  background: var(--accent);
   color: #fff;
+}
+
+/* 縦横切り替えボタン: ピッチ型アイコンのみ。アイコンは aria-pressed に応じて
+   縦（ポートレート）⇔横（ランドスケープ）へ90°回転して向きを示す。
+   ラベルは持たず、aria-label / title で「縦表示／横表示」を伝える。 */
+.orientation-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 10px;
+}
+
+.orientation-icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  transition: transform 0.2s ease;
+}
+
+.orientation-icon rect,
+.orientation-icon line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+}
+
+.orientation-icon circle {
+  fill: currentColor;
+}
+
+.orientation-toggle[aria-pressed="true"] .orientation-icon {
+  transform: rotate(90deg);
 }
 
 .danger-button {
@@ -1185,7 +1221,8 @@ textarea {
 
 @media (prefers-reduced-motion: reduce) {
   .side-panel,
-  .panel-scrim {
+  .panel-scrim,
+  .orientation-icon {
     transition: none;
   }
 }

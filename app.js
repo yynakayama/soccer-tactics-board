@@ -166,6 +166,16 @@ function init() {
   applyPanelOpen();
   fitBoardSize();
   renderDrawings();
+  registerServiceWorker();
+}
+
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  // 表示層に影響しないよう load 後に登録。失敗は握りつぶす
+  // （file:// 直開きや SW 非対応環境でも通常の Web アプリとして動作する）。
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
 }
 
 function bindEvents() {
@@ -538,7 +548,10 @@ function applyFormationToOpponents() {
 function applyOrientation() {
   const vertical = state.orientation === "vertical";
   els.field.classList.toggle("vertical", vertical);
-  els.toggleOrientationBtn.textContent = vertical ? t("toolbar.orientationToHorizontal") : t("toolbar.orientationToVertical");
+  // アイコンのみのボタンなので、切り替え先の向きを aria-label / title（ツールチップ）で伝える。
+  const label = vertical ? t("toolbar.orientationToHorizontal") : t("toolbar.orientationToVertical");
+  els.toggleOrientationBtn.setAttribute("aria-label", label);
+  els.toggleOrientationBtn.title = label;
   els.toggleOrientationBtn.setAttribute("aria-pressed", String(vertical));
   fitBoardSize();
 }
