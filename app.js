@@ -115,6 +115,8 @@ const els = {
   opponentRoster: document.querySelector("#opponentRoster"),
   homeFieldCount: document.querySelector("#homeFieldCount"),
   awayFieldCount: document.querySelector("#awayFieldCount"),
+  homeSentOffBadge: document.querySelector("#homeSentOffBadge"),
+  awaySentOffBadge: document.querySelector("#awaySentOffBadge"),
 };
 
 let state = {
@@ -982,6 +984,18 @@ function nudgeSelectedPlayer(event) {
 function renderCounts() {
   els.homeFieldCount.textContent = String(getHomeFieldPlayers().length);
   els.awayFieldCount.textContent = String(getActiveOpponents().length);
+  updateSentOffBadge(els.homeSentOffBadge, getHomeSentOffPlayers().length);
+  updateSentOffBadge(els.awaySentOffBadge, getOpponentSentOffPlayers().length);
+}
+
+function updateSentOffBadge(el, count) {
+  if (count > 0) {
+    el.textContent = `🟥${count}`;
+    el.hidden = false;
+  } else {
+    el.textContent = "";
+    el.hidden = true;
+  }
 }
 
 function renderSelectionPanel() {
