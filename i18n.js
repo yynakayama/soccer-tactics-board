@@ -56,7 +56,6 @@ const MESSAGES = {
     "toolbar.orientationToHorizontal": "横表示",
     // --- 動的（app.js） ---
     "confirm.resetHome": "味方の登録と配置を初期状態に戻しますか？",
-    "confirm.clearDrawings": "描いた線をすべて消しますか？",
     "confirm.deletePlayer": "{label}を削除しますか？",
     "team.home": "味方",
     "team.away": "相手",
@@ -130,7 +129,6 @@ const MESSAGES = {
     "toolbar.orientationToVertical": "Vertical",
     "toolbar.orientationToHorizontal": "Horizontal",
     "confirm.resetHome": "Reset the home roster and positions to defaults?",
-    "confirm.clearDrawings": "Erase all drawings?",
     "confirm.deletePlayer": "Delete {label}?",
     "team.home": "Home",
     "team.away": "Away",

@@ -290,8 +290,6 @@ function bindEvents() {
 
   els.clearDrawBtn.addEventListener("click", () => {
     if (!state.drawings.length) return;
-    const ok = window.confirm(t("confirm.clearDrawings"));
-    if (!ok) return;
     state.drawings = [];
     saveState();
     renderDrawings();
