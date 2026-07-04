@@ -3,7 +3,22 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Soccer Board</title>
+    <title>Soccer Tactics Board — free browser whiteboard</title>
+    <meta name="description" content="Free, install-free soccer/football tactics whiteboard. Drag players, draw arrows, switch formations and tactical guides, right in your browser." />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Soccer Tactics Board" />
+    <meta property="og:description" content="Free, install-free soccer/football tactics whiteboard — runs entirely in your browser." />
+    <meta property="og:url" content="https://GITHUB_USERNAME.github.io/soccer-tactics-board/" />
+    <meta property="og:image" content="https://GITHUB_USERNAME.github.io/soccer-tactics-board/assets/screenshot.png" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Soccer Tactics Board" />
+    <meta name="twitter:description" content="Free, install-free soccer/football tactics whiteboard — runs entirely in your browser." />
+    <meta name="twitter:image" content="https://GITHUB_USERNAME.github.io/soccer-tactics-board/assets/screenshot.png" />
+
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -14,7 +29,7 @@
             <div class="brand-mark" aria-hidden="true">SB</div>
             <div>
               <h1>Soccer Board</h1>
-              <p>チーム戦術ホワイトボード</p>
+              <p data-i18n="brand.tagline">チーム戦術ホワイトボード</p>
             </div>
           </div>
           <button id="toggleHeaderBtn" class="header-toggle" type="button" aria-expanded="true" aria-controls="headerToolbar" aria-label="ツールバーを隠す">▾</button>
@@ -22,7 +37,7 @@
 
         <div class="toolbar" id="headerToolbar" aria-label="ボード操作">
           <label class="select-control">
-            <span>配置</span>
+            <span data-i18n="toolbar.formationLabel">配置</span>
             <select id="formationSelect">
               <option value="4-4-2">4-4-2</option>
               <option value="4-3-3">4-3-3</option>
@@ -30,12 +45,13 @@
               <option value="3-5-2">3-5-2</option>
             </select>
           </label>
-          <button id="applyFormationBtn" class="secondary-button" type="button">反映</button>
+          <button id="applyFormationBtn" class="secondary-button" type="button" data-i18n="toolbar.apply">反映</button>
           <button id="toggleOrientationBtn" class="secondary-button" type="button" aria-pressed="false">縦表示</button>
-          <button id="toggleLanesBtn" class="secondary-button" type="button" aria-pressed="false">5レーン</button>
-          <button id="toggleBielsaBtn" class="secondary-button" type="button" aria-pressed="false">ビエルサライン</button>
-          <button id="toggleThirdsBtn" class="secondary-button" type="button" aria-pressed="false">3ゾーン</button>
-          <button id="resetBoardBtn" class="primary-button" type="button" aria-keyshortcuts="r">ボードリセット <kbd class="kbd-hint">R</kbd></button>
+          <button id="langToggleBtn" class="secondary-button" type="button">EN</button>
+          <button id="toggleLanesBtn" class="secondary-button" type="button" aria-pressed="false" data-i18n="toolbar.lanes">5レーン</button>
+          <button id="toggleBielsaBtn" class="secondary-button" type="button" aria-pressed="false" data-i18n="toolbar.bielsa">ビエルサライン</button>
+          <button id="toggleThirdsBtn" class="secondary-button" type="button" aria-pressed="false" data-i18n="toolbar.thirds">3ゾーン</button>
+          <button id="resetBoardBtn" class="primary-button" type="button" aria-keyshortcuts="r"><span data-i18n="toolbar.reset">ボードリセット</span> <kbd class="kbd-hint">R</kbd></button>
         </div>
       </header>
 
@@ -44,31 +60,31 @@
           <div class="score-strip">
             <div>
               <span class="team-dot home-dot"></span>
-              味方 <strong id="homeFieldCount">0</strong>
+              <span data-i18n="score.home">味方</span> <strong id="homeFieldCount">0</strong>
               <span id="homeSentOffBadge" class="sent-off-badge" hidden></span>
             </div>
             <div>
               <span class="team-dot away-dot"></span>
-              相手 <strong id="awayFieldCount">0</strong>
+              <span data-i18n="score.away">相手</span> <strong id="awayFieldCount">0</strong>
               <span id="awaySentOffBadge" class="sent-off-badge" hidden></span>
             </div>
           </div>
 
           <div class="draw-toolbar" role="toolbar" aria-label="描画ツール">
             <div class="tool-group" role="group" aria-label="モード">
-              <button id="toolMoveBtn" class="tool-button" type="button" aria-pressed="true" aria-keyshortcuts="v">移動 <kbd class="kbd-hint">V</kbd></button>
-              <button id="toolPenBtn" class="tool-button" type="button" aria-pressed="false" aria-keyshortcuts="p">ペン <kbd class="kbd-hint">P</kbd></button>
-              <button id="toolArrowBtn" class="tool-button" type="button" aria-pressed="false" aria-keyshortcuts="a">矢印 <kbd class="kbd-hint">A</kbd></button>
+              <button id="toolMoveBtn" class="tool-button" type="button" aria-pressed="true" aria-keyshortcuts="v"><span data-i18n="draw.move">移動</span> <kbd class="kbd-hint">V</kbd></button>
+              <button id="toolPenBtn" class="tool-button" type="button" aria-pressed="false" aria-keyshortcuts="p"><span data-i18n="draw.pen">ペン</span> <kbd class="kbd-hint">P</kbd></button>
+              <button id="toolArrowBtn" class="tool-button" type="button" aria-pressed="false" aria-keyshortcuts="a"><span data-i18n="draw.arrow">矢印</span> <kbd class="kbd-hint">A</kbd></button>
             </div>
             <div class="tool-group" role="group" aria-label="線の色">
-              <button class="color-swatch yellow" type="button" data-color="yellow" aria-label="黄" aria-pressed="true"></button>
-              <button class="color-swatch red" type="button" data-color="red" aria-label="赤" aria-pressed="false"></button>
-              <button class="color-swatch blue" type="button" data-color="blue" aria-label="青" aria-pressed="false"></button>
-              <button class="color-swatch white" type="button" data-color="white" aria-label="白" aria-pressed="false"></button>
+              <button class="color-swatch yellow" type="button" data-color="yellow" aria-label="黄" aria-pressed="true" data-i18n="draw.colorYellow" data-i18n-attr="aria-label"></button>
+              <button class="color-swatch red" type="button" data-color="red" aria-label="赤" aria-pressed="false" data-i18n="draw.colorRed" data-i18n-attr="aria-label"></button>
+              <button class="color-swatch blue" type="button" data-color="blue" aria-label="青" aria-pressed="false" data-i18n="draw.colorBlue" data-i18n-attr="aria-label"></button>
+              <button class="color-swatch white" type="button" data-color="white" aria-label="白" aria-pressed="false" data-i18n="draw.colorWhite" data-i18n-attr="aria-label"></button>
             </div>
             <div class="tool-group">
-              <button id="undoDrawBtn" class="tool-button" type="button" aria-keyshortcuts="Control+z">1つ戻す <kbd class="kbd-hint">Ctrl+Z</kbd></button>
-              <button id="clearDrawBtn" class="tool-button" type="button">全消去</button>
+              <button id="undoDrawBtn" class="tool-button" type="button" aria-keyshortcuts="Control+z"><span data-i18n="draw.undo">1つ戻す</span> <kbd class="kbd-hint">Ctrl+Z</kbd></button>
+              <button id="clearDrawBtn" class="tool-button" type="button" data-i18n="draw.clear">全消去</button>
             </div>
           </div>
 
@@ -93,61 +109,62 @@
         <aside id="sidePanel" class="side-panel" aria-label="管理パネル">
           <section class="panel-section">
             <div class="section-title">
-              <h2>選択中</h2>
-              <button id="clearSelectionBtn" class="text-button" type="button" aria-keyshortcuts="Escape">解除 <kbd class="kbd-hint">Esc</kbd></button>
+              <h2 data-i18n="panel.selectedTitle">選択中</h2>
+              <button id="clearSelectionBtn" class="text-button" type="button" aria-keyshortcuts="Escape"><span data-i18n="panel.clearSelection">解除</span> <kbd class="kbd-hint">Esc</kbd></button>
             </div>
             <div id="selectionPanel"></div>
           </section>
 
           <section class="panel-section">
             <div class="section-title">
-              <h2>交代</h2>
+              <h2 data-i18n="panel.subTitle">交代</h2>
             </div>
             <div id="substitutionPanel"></div>
           </section>
 
           <section class="panel-section">
             <div class="section-title">
-              <h2>退場</h2>
+              <h2 data-i18n="panel.sentOffTitle">退場</h2>
             </div>
             <div id="sentOffPanel"></div>
           </section>
 
           <section class="panel-section">
             <div class="section-title">
-              <h2>味方登録</h2>
-              <button id="sortRosterBtn" class="text-button" type="button">番号順</button>
+              <h2 data-i18n="panel.homeRosterTitle">味方登録</h2>
+              <button id="sortRosterBtn" class="text-button" type="button" data-i18n="panel.sortByNumber">番号順</button>
             </div>
             <form id="addPlayerForm" class="add-player-form">
-              <input id="newNumberInput" type="text" inputmode="numeric" autocomplete="off" placeholder="No." maxlength="3" />
-              <input id="newNameInput" type="text" autocomplete="off" placeholder="名前" maxlength="16" />
-              <button class="secondary-button" type="submit">追加</button>
+              <input id="newNumberInput" type="text" inputmode="numeric" autocomplete="off" placeholder="No." maxlength="3" data-i18n="form.numberPlaceholder" data-i18n-attr="placeholder" />
+              <input id="newNameInput" type="text" autocomplete="off" placeholder="名前" maxlength="16" data-i18n="form.namePlaceholder" data-i18n-attr="placeholder" />
+              <button class="secondary-button" type="submit" data-i18n="form.add">追加</button>
             </form>
             <div id="homeRoster" class="roster-list"></div>
-            <button id="resetHomeBtn" class="danger-button" type="button">味方登録を初期化</button>
+            <button id="resetHomeBtn" class="danger-button" type="button" data-i18n="panel.resetHome">味方登録を初期化</button>
           </section>
 
           <section class="panel-section">
             <div class="section-title">
-              <h2>相手登録</h2>
-              <button id="resetOpponentsBtn" class="text-button" type="button">リセット</button>
+              <h2 data-i18n="panel.opponentTitle">相手登録</h2>
+              <button id="resetOpponentsBtn" class="text-button" type="button" data-i18n="panel.resetOpponents">リセット</button>
             </div>
             <div id="opponentRoster" class="roster-list opponent-list"></div>
           </section>
 
           <section class="panel-section">
             <div class="section-title">
-              <h2>メモ</h2>
+              <h2 data-i18n="panel.notesTitle">メモ</h2>
             </div>
-            <textarea id="boardNotes" rows="5" maxlength="400" placeholder="今日の狙い、交代案、セットプレーなど"></textarea>
+            <textarea id="boardNotes" rows="5" maxlength="400" placeholder="今日の狙い、交代案、セットプレーなど" data-i18n="notes.placeholder" data-i18n-attr="placeholder"></textarea>
           </section>
         </aside>
       </main>
 
-      <button id="togglePanelBtn" class="panel-toggle" type="button" aria-expanded="false" aria-controls="sidePanel" aria-label="管理パネルを開く">パネル</button>
+      <button id="togglePanelBtn" class="panel-toggle" type="button" aria-expanded="false" aria-controls="sidePanel" aria-label="管理パネルを開く" data-i18n="panel.toggleLabel">パネル</button>
       <div id="panelScrim" class="panel-scrim"></div>
     </div>
 
+    <script src="./i18n.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>

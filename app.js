@@ -97,6 +97,7 @@ const els = {
   toggleBielsaBtn: document.querySelector("#toggleBielsaBtn"),
   toggleThirdsBtn: document.querySelector("#toggleThirdsBtn"),
   resetBoardBtn: document.querySelector("#resetBoardBtn"),
+  langToggleBtn: document.querySelector("#langToggleBtn"),
   clearSelectionBtn: document.querySelector("#clearSelectionBtn"),
   sortRosterBtn: document.querySelector("#sortRosterBtn"),
   resetHomeBtn: document.querySelector("#resetHomeBtn"),
@@ -151,7 +152,14 @@ init();
 
 function init() {
   loadState();
+  initLocale();
   bindEvents();
+  registerLocaleChange(() => {
+    renderAll();
+    applyHeaderCollapsed();
+    applyPanelOpen();
+  });
+  applyStaticTranslations();
   renderAll();
   applyHeaderCollapsed();
   applyPanelOpen();
@@ -186,6 +194,10 @@ function bindEvents() {
     resetBoard();
   });
 
+  els.langToggleBtn.addEventListener("click", () => {
+    setLocale(getLocale() === "ja" ? "en" : "ja");
+  });
+
   els.toggleHeaderBtn.addEventListener("click", () => {
     state.ui.headerCollapsed = !state.ui.headerCollapsed;
     applyHeaderCollapsed();
@@ -206,7 +218,7 @@ function bindEvents() {
   });
 
   els.resetHomeBtn.addEventListener("click", () => {
-    const ok = window.confirm("味方の登録と配置を初期状態に戻しますか？");
+    const ok = window.confirm(t("confirm.resetHome"));
     if (!ok) return;
     state.homePlayers = createDefaultHomePlayers();
     state.selected = null;
@@ -261,7 +273,7 @@ function bindEvents() {
 
   els.clearDrawBtn.addEventListener("click", () => {
     if (!state.drawings.length) return;
-    const ok = window.confirm("描いた線をすべて消しますか？");
+    const ok = window.confirm(t("confirm.clearDrawings"));
     if (!ok) return;
     state.drawings = [];
     saveState();
@@ -519,7 +531,7 @@ function applyFormationToOpponents() {
 function applyOrientation() {
   const vertical = state.orientation === "vertical";
   els.field.classList.toggle("vertical", vertical);
-  els.toggleOrientationBtn.textContent = vertical ? "横表示" : "縦表示";
+  els.toggleOrientationBtn.textContent = vertical ? t("toolbar.orientationToHorizontal") : t("toolbar.orientationToVertical");
   els.toggleOrientationBtn.setAttribute("aria-pressed", String(vertical));
   fitBoardSize();
 }
@@ -554,7 +566,7 @@ function applyHeaderCollapsed() {
   els.toggleHeaderBtn.setAttribute("aria-expanded", String(!collapsed));
   els.toggleHeaderBtn.setAttribute(
     "aria-label",
-    collapsed ? "ツールバーを表示" : "ツールバーを隠す",
+    collapsed ? t("header.showToolbar") : t("header.hideToolbar"),
   );
 }
 
@@ -564,7 +576,7 @@ function applyPanelOpen() {
   els.togglePanelBtn.setAttribute("aria-expanded", String(panelOpen));
   els.togglePanelBtn.setAttribute(
     "aria-label",
-    panelOpen ? "管理パネルを閉じる" : "管理パネルを開く",
+    panelOpen ? t("panel.close") : t("panel.open"),
   );
   if (panelOpen) els.sidePanel.scrollTop = 0;
 }
@@ -595,6 +607,7 @@ function applyGuideButtons() {
 function renderAll() {
   validateSelection();
   applyOrientation();
+  els.langToggleBtn.textContent = getLocale() === "ja" ? "EN" : "日本語";
   applyGuideButtons();
   els.formationSelect.value = state.formation;
   els.boardNotes.value = state.notes;
@@ -760,7 +773,7 @@ function createPlayerToken(team, player) {
   token.dataset.id = player.id;
   setTokenPosition(token, player);
   applyTokenDirection(token, player);
-  token.setAttribute("aria-label", `${team === "home" ? "味方" : "相手"} ${displayNumber(player)}`);
+  token.setAttribute("aria-label", `${team === "home" ? t("team.home") : t("team.away")} ${displayNumber(player)}`);
 
   const number = document.createElement("span");
   number.className = "number";
@@ -795,7 +808,7 @@ function createBallToken() {
   token.dataset.team = "ball";
   token.dataset.id = "ball";
   setTokenPosition(token, state.ball);
-  token.setAttribute("aria-label", "ボール");
+  token.setAttribute("aria-label", t("token.ball"));
 
   token.addEventListener("pointerdown", startDrag);
   token.addEventListener("keydown", nudgeSelectedPlayer);
@@ -1104,7 +1117,7 @@ function renderSelectionPanel() {
   const selected = getSelectedPlayer();
 
   if (!selected) {
-    els.selectionPanel.appendChild(emptyState("選択なし"));
+    els.selectionPanel.appendChild(emptyState(t("panel.noSelection")));
     return;
   }
 
@@ -1115,17 +1128,17 @@ function renderSelectionPanel() {
   meta.className = "selection-meta";
   const pill = document.createElement("span");
   pill.className = `pill ${selected.team}`;
-  pill.textContent = selected.team === "home" ? "味方" : "相手";
+  pill.textContent = selected.team === "home" ? t("team.home") : t("team.away");
   const status = document.createElement("span");
   status.textContent =
-    selected.team === "home" ? (selected.player.onField ? "ピッチ" : "控え") : "ピッチ";
+    selected.team === "home" ? (selected.player.onField ? t("status.onPitch") : t("status.bench")) : t("status.onPitch");
   meta.append(pill, status);
 
   const grid = document.createElement("div");
   grid.className = "field-grid";
 
   const numberLabel = document.createElement("label");
-  numberLabel.textContent = "背番号";
+  numberLabel.textContent = t("label.number");
   const numberInput = document.createElement("input");
   numberInput.type = "text";
   numberInput.inputMode = "numeric";
@@ -1134,7 +1147,7 @@ function renderSelectionPanel() {
   numberLabel.appendChild(numberInput);
 
   const nameLabel = document.createElement("label");
-  nameLabel.textContent = "名前";
+  nameLabel.textContent = t("label.name");
   const nameInput = document.createElement("input");
   nameInput.type = "text";
   nameInput.maxLength = 16;
@@ -1173,7 +1186,7 @@ function renderSelectionPanel() {
     const sendOffBtn = document.createElement("button");
     sendOffBtn.type = "button";
     sendOffBtn.className = "danger-button send-off-button";
-    sendOffBtn.textContent = "退場させる";
+    sendOffBtn.textContent = t("action.sendOff");
     sendOffBtn.addEventListener("click", () => sendOffPlayer(selected.team, selected.player.id));
     card.appendChild(sendOffBtn);
   }
@@ -1186,14 +1199,14 @@ function renderSubstitutionPanel() {
   const selected = getSelectedPlayer();
 
   if (!selected || selected.team !== "home") {
-    els.substitutionPanel.appendChild(emptyState("味方選手を選択"));
+    els.substitutionPanel.appendChild(emptyState(t("sub.selectHome")));
     return;
   }
 
   if (selected.player.onField) {
     const bench = getHomeBenchPlayers();
     if (!bench.length) {
-      els.substitutionPanel.appendChild(emptyState("控えなし"));
+      els.substitutionPanel.appendChild(emptyState(t("sub.noBench")));
       return;
     }
     els.substitutionPanel.appendChild(createSubstitutionList(bench, (benchPlayer) => {
@@ -1204,7 +1217,7 @@ function renderSubstitutionPanel() {
 
   const starters = getHomeFieldPlayers();
   if (!starters.length) {
-    els.substitutionPanel.appendChild(emptyState("ピッチの選手なし"));
+    els.substitutionPanel.appendChild(emptyState(t("sub.noField")));
     return;
   }
   els.substitutionPanel.appendChild(createSubstitutionList(starters, (starter) => {
@@ -1221,7 +1234,7 @@ function createSubstitutionList(players, onSwap) {
       team: "home",
       actions: [
         {
-          label: "交代",
+          label: t("action.sub"),
           className: "mini-button primary",
           onClick: () => onSwap(player),
         },
@@ -1237,7 +1250,7 @@ function renderSentOffPanel() {
   const awaySentOff = getOpponentSentOffPlayers();
 
   if (!homeSentOff.length && !awaySentOff.length) {
-    els.sentOffPanel.appendChild(emptyState("退場者なし"));
+    els.sentOffPanel.appendChild(emptyState(t("sentOff.none")));
     return;
   }
 
@@ -1258,7 +1271,7 @@ function createSentOffRow(team, player) {
 
   const pill = document.createElement("span");
   pill.className = `pill ${team}`;
-  pill.textContent = team === "home" ? "味方" : "相手";
+  pill.textContent = team === "home" ? t("team.home") : t("team.away");
 
   const badge = document.createElement("div");
   badge.className = `number-badge ${team}`;
@@ -1267,7 +1280,7 @@ function createSentOffRow(team, player) {
   const name = document.createElement("div");
   name.className = "player-name";
   const primary = document.createElement("strong");
-  primary.textContent = team === "home" ? player.name || "名前未登録" : player.name || "相手";
+  primary.textContent = team === "home" ? player.name || t("player.noName") : player.name || t("team.away");
   name.appendChild(primary);
 
   const actionWrap = document.createElement("div");
@@ -1275,7 +1288,7 @@ function createSentOffRow(team, player) {
   const restoreBtn = document.createElement("button");
   restoreBtn.type = "button";
   restoreBtn.className = "mini-button primary";
-  restoreBtn.textContent = "復帰";
+  restoreBtn.textContent = t("action.restore");
   restoreBtn.addEventListener("click", () => restorePlayer(team, player.id));
   actionWrap.appendChild(restoreBtn);
 
@@ -1287,8 +1300,8 @@ function renderHomeRoster() {
   els.homeRoster.replaceChildren();
   const fieldPlayers = getHomeFieldPlayers();
   const benchPlayers = getHomeBenchPlayers();
-  els.homeRoster.appendChild(createRosterGroup(`ピッチ ${fieldPlayers.length}`, fieldPlayers));
-  els.homeRoster.appendChild(createRosterGroup(`控え ${benchPlayers.length}`, benchPlayers));
+  els.homeRoster.appendChild(createRosterGroup(t("roster.onFieldGroup", { count: fieldPlayers.length }), fieldPlayers));
+  els.homeRoster.appendChild(createRosterGroup(t("roster.benchGroup", { count: benchPlayers.length }), benchPlayers));
 }
 
 function createRosterGroup(title, players) {
@@ -1301,14 +1314,14 @@ function createRosterGroup(title, players) {
   group.appendChild(heading);
 
   if (!players.length) {
-    group.appendChild(emptyState("該当なし"));
+    group.appendChild(emptyState(t("roster.none")));
     return group;
   }
 
   players.forEach((player) => {
     const actions = [
       {
-        label: "選択",
+        label: t("action.select"),
         className: "mini-button",
         onClick: () => selectPlayer("home", player.id),
       },
@@ -1317,7 +1330,7 @@ function createRosterGroup(title, players) {
     const selected = getSelectedPlayer();
     if (selected?.team === "home" && selected.player.onField && !player.onField) {
       actions.unshift({
-        label: "交代",
+        label: t("action.sub"),
         className: "mini-button primary",
         onClick: () => swapHomePlayers(selected.player.id, player.id),
       });
@@ -1325,7 +1338,7 @@ function createRosterGroup(title, players) {
 
     if (selected?.team === "home" && !selected.player.onField && player.onField) {
       actions.unshift({
-        label: "交代",
+        label: t("action.sub"),
         className: "mini-button primary",
         onClick: () => swapHomePlayers(player.id, selected.player.id),
       });
@@ -1333,7 +1346,7 @@ function createRosterGroup(title, players) {
 
     if (!player.onField) {
       actions.push({
-        label: "削除",
+        label: t("action.delete"),
         className: "mini-button danger",
         onClick: () => removeHomePlayer(player.id),
       });
@@ -1365,7 +1378,7 @@ function renderOpponentRoster() {
     numberInput.inputMode = "numeric";
     numberInput.maxLength = 3;
     numberInput.value = player.number;
-    numberInput.setAttribute("aria-label", "相手 背番号");
+    numberInput.setAttribute("aria-label", t("aria.opponentNumber"));
     numberInput.addEventListener("focus", focusAway);
     numberInput.addEventListener("input", () => {
       numberInput.value = sanitizeNumber(numberInput.value);
@@ -1380,8 +1393,8 @@ function renderOpponentRoster() {
     nameInput.type = "text";
     nameInput.maxLength = 16;
     nameInput.value = player.name || "";
-    nameInput.placeholder = "名前";
-    nameInput.setAttribute("aria-label", "相手 名前");
+    nameInput.placeholder = t("form.namePlaceholder");
+    nameInput.setAttribute("aria-label", t("aria.opponentName"));
     nameInput.addEventListener("focus", focusAway);
     nameInput.addEventListener("input", () => {
       player.name = nameInput.value.slice(0, 16);
@@ -1407,9 +1420,9 @@ function createPlayerRow({ player, team, actions }) {
   const name = document.createElement("div");
   name.className = "player-name";
   const primary = document.createElement("strong");
-  primary.textContent = team === "home" ? player.name || "名前未登録" : "相手";
+  primary.textContent = team === "home" ? player.name || t("player.noName") : t("team.away");
   const secondary = document.createElement("span");
-  secondary.textContent = player.onField ? "ピッチ" : "控え";
+  secondary.textContent = player.onField ? t("status.onPitch") : t("status.bench");
   name.append(primary, secondary);
 
   const actionWrap = document.createElement("div");
@@ -1467,7 +1480,7 @@ function removeHomePlayer(id) {
   const player = state.homePlayers.find((item) => item.id === id);
   if (!player || player.onField || player.sentOff) return;
   const label = player.name || `No.${displayNumber(player)}`;
-  const ok = window.confirm(`${label}を削除しますか？`);
+  const ok = window.confirm(t("confirm.deletePlayer", { label }));
   if (!ok) return;
 
   state.homePlayers = state.homePlayers.filter((item) => item.id !== id);
