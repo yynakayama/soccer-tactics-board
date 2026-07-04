@@ -25,6 +25,7 @@
 | リポジトリ名 | `soccer-tactics-board`（検索キーワードを含む） |
 | ライセンス | MIT |
 | 宣伝の位置づけ | READMEの見栄え・Topics・About は必須。コミュニティ投稿やawesome系PRは任意 |
+| 検索・SNS共有メタ | 追加する。純粋SEOより「共有時の見栄え（OGP/Twitterカード）」を重視。メタタグ + robots.txt + sitemap.xml を最小構成で用意 |
 
 ## スコープ
 
@@ -32,6 +33,7 @@
 
 - UI英日切替（i18n, A案）
 - OSS衛生ファイル一式（LICENSE / README英日 / .gitignore / デモ用スクリーンショットまたはGIF）
+- 検索・SNS共有メタ（メタタグ / OGP・Twitterカード / robots.txt / sitemap.xml）
 - GitHub Pages でのデモ公開
 - 認知プレイブックの実施（必須項目）
 
@@ -117,6 +119,32 @@ const MESSAGES = {
 - `dev-server.js` はローカル確認用に残す（READMEに用途を明記）。Pages では使われない。
 - パス依存: `index.html` は `./styles.css` `./app.js` と相対パス参照のため、サブパス配信（`/soccer-tactics-board/`）でもそのまま動く。絶対パス参照を新規に増やさないこと。
 
+## 検索・SNS共有メタ（SEO / OGP）
+
+方針: 純粋な検索順位狙いは効きにくいツールなので、**「共有された時の見栄え（OGP）」と「クロールされる最低限の情報」**を低コストで整える。
+
+### `<head>` に追加するメタタグ（`index.html`）
+
+- `<title>` … 英語固定でキーワードを含む（例: `Soccer Tactics Board — free browser whiteboard`）。i18n切替の対象にはせず、SEOの一貫性のため言語に関わらず英語のまま。
+- `<meta name="description">` … 一行英語説明（キーワード: soccer / football / tactics / whiteboard / formation）。
+- OGP: `og:title` / `og:description` / `og:type=website` / `og:url`（Pages URL） / `og:image`（デモGIFの静止画。1200×630px 推奨、リポジトリ内の相対/絶対URL）。
+- Twitter Card: `twitter:card=summary_large_image` / `twitter:title` / `twitter:description` / `twitter:image`。
+- 注意: OGP/Twitter の `og:url` と `og:image` はクローラが解決できる**絶対URL**にする（相対パスは展開されない場合がある）。Pages 公開URL確定後に埋める。
+
+### クロール補助ファイル
+
+- `robots.txt` … 全許可 + `Sitemap:` 行（Pages URL の sitemap を指す）。
+- `sitemap.xml` … トップURL 1件のみの最小構成。
+- どちらもリポジトリ直下に置き、Pages のサブパスで配信されることを前提にURLを記述する。
+
+### 静的な説明テキスト（クロール対象）
+
+- ページ内に少量でも人間可読の説明文（アプリの用途）を残す。既存の `<h1>Soccer Board</h1>` + タグラインで最低限は満たすが、READMEにも同等の説明を置きクロール対象を確保する。
+
+### やらないこと
+
+- 構造化データ（JSON-LD）、多数のランディングページ、外部SEOツール導入は今回スコープ外（費用対効果が低い）。
+
 ## 認知プレイブック
 
 労力対効果順。上から数個で十分効く。
@@ -134,9 +162,11 @@ const MESSAGES = {
 
 1. i18n（英日切替）実装 → ローカルで動作確認
 2. OSSファイル一式（LICENSE / README英日 / .gitignore）作成
-3. GitHubへpush → Pages有効化 → デモURL取得
-4. README にデモURL・GIFを反映、Topics/About設定
-5. （任意）コミュニティ投稿
+3. 検索・SNS共有メタ追加（メタタグ / OGP / robots.txt / sitemap.xml）※URL依存部分は手順5でPages URL確定後に埋める
+4. GitHubへpush → Pages有効化 → デモURL取得
+5. OGP `og:url`/`og:image`・sitemap・README のデモURL/GIFを確定URLで反映、Topics/About設定
+6. 共有時の展開を検証（後述）
+7. （任意）コミュニティ投稿
 
 ## テスト・動作確認方針
 
@@ -148,6 +178,8 @@ const MESSAGES = {
   - 動的パネル（選択中/交代/ロスター）を操作しても現在ロケールの文言で描画される
   - EN 時に `<html lang="en">` になる
   - GitHub Pages のサブパスURLでスタイル・スクリプトが正しく読み込まれ動作する
+  - デモURLを共有した時にOGP画像・タイトル・説明が展開される（Facebook Sharing Debugger / X Card Validator 等、または実際にDiscord/Slackへ貼って確認）
+  - `robots.txt` / `sitemap.xml` が公開URLで200で取得できる
 
 ## 前提・未決事項
 
