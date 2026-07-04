@@ -636,6 +636,9 @@ textarea {
   border: 2px solid rgba(255, 255, 255, 0.9);
   box-shadow: 0 8px 18px rgba(10, 20, 14, 0.28);
   font-weight: 900;
+  /* 背番号は円（--token）に比例。円は据え置きで文字だけ大きめ（円径の0.5倍）。
+     PC 約23px / モバイル 約19px。--token 基準なので後段のサイズ切替でも円と一緒に追従。 */
+  font-size: calc(var(--token) * 0.5);
   line-height: 1;
 }
 
