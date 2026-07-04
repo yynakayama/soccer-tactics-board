@@ -88,6 +88,8 @@ const els = {
   sidePanel: document.querySelector("#sidePanel"),
   togglePanelBtn: document.querySelector("#togglePanelBtn"),
   panelScrim: document.querySelector("#panelScrim"),
+  boardArea: document.querySelector(".board-area"),
+  fieldShell: document.querySelector(".field-shell"),
   formationSelect: document.querySelector("#formationSelect"),
   applyFormationBtn: document.querySelector("#applyFormationBtn"),
   toggleOrientationBtn: document.querySelector("#toggleOrientationBtn"),
@@ -143,6 +145,7 @@ let activeStroke = null;
 let drawTool = "move";
 let drawColor = "yellow";
 let panelOpen = false;
+let lastTap = null;
 
 init();
 
@@ -152,6 +155,8 @@ function init() {
   renderAll();
   applyHeaderCollapsed();
   applyPanelOpen();
+  fitBoardSize();
+  renderDrawings();
 }
 
 function bindEvents() {
@@ -184,6 +189,8 @@ function bindEvents() {
   els.toggleHeaderBtn.addEventListener("click", () => {
     state.ui.headerCollapsed = !state.ui.headerCollapsed;
     applyHeaderCollapsed();
+    fitBoardSize();
+    renderDrawings();
     saveState();
   });
 
@@ -263,7 +270,10 @@ function bindEvents() {
 
   els.drawLayer.addEventListener("pointerdown", startDrawStroke);
 
-  window.addEventListener("resize", renderDrawings);
+  window.addEventListener("resize", () => {
+    fitBoardSize();
+    renderDrawings();
+  });
   window.addEventListener("keydown", handleShortcut);
 }
 
@@ -511,6 +521,30 @@ function applyOrientation() {
   els.field.classList.toggle("vertical", vertical);
   els.toggleOrientationBtn.textContent = vertical ? "横表示" : "縦表示";
   els.toggleOrientationBtn.setAttribute("aria-pressed", String(vertical));
+  fitBoardSize();
+}
+
+/* 横表示のフィールドが画面の残り高さに収まる最大サイズになるよう、
+   盤面カラムの max-width をインラインで与える（縦表示は既存CSSに任せる）。
+   幅を絞ると描画ツールバーの折返しが変わり上部の高さが動くため2回計測する。 */
+function fitBoardSize() {
+  if (!els.boardArea || !els.fieldShell) return;
+  els.boardArea.style.maxWidth = "";
+  if (state.orientation === "vertical") return;
+
+  for (let pass = 0; pass < 2; pass += 1) {
+    const shellTop = els.fieldShell.getBoundingClientRect().top;
+    const shellStyles = window.getComputedStyle(els.fieldShell);
+    const padX = parseFloat(shellStyles.paddingLeft) + parseFloat(shellStyles.paddingRight);
+    const padY = parseFloat(shellStyles.paddingTop) + parseFloat(shellStyles.paddingBottom);
+    const availHeight = window.innerHeight - shellTop - 28 - padY;
+    if (availHeight <= 200) {
+      els.boardArea.style.maxWidth = "";
+      return;
+    }
+    const targetWidth = availHeight * (105 / 68) + padX;
+    els.boardArea.style.maxWidth = `${Math.round(targetWidth)}px`;
+  }
 }
 
 function applyHeaderCollapsed() {
@@ -822,12 +856,24 @@ function endDrag(event) {
   if (!activeDrag || event.pointerId !== activeDrag.pointerId) return;
   if (activeDrag.moved) {
     saveState();
+  } else if (event.type === "pointerup" && activeDrag.team !== "ball") {
+    registerTokenTap(activeDrag.team, activeDrag.id);
   }
   activeDrag = null;
   window.removeEventListener("pointermove", moveDrag);
   window.removeEventListener("pointerup", endDrag);
   window.removeEventListener("pointercancel", endDrag);
   renderFieldPlayers();
+}
+
+/* ダブルタップ（400ms以内に同じ選手を2回タップ）で管理パネルを開く。
+   シングルタップは選択のみ、ドラッグは移動のみでパネルを出さない。 */
+function registerTokenTap(team, id) {
+  const now = Date.now();
+  const isDouble =
+    lastTap && lastTap.team === team && lastTap.id === id && now - lastTap.time < 400;
+  lastTap = isDouble ? null : { team, id, time: now };
+  if (isDouble) setPanelOpen(true);
 }
 
 function startRotate(event) {
@@ -1438,7 +1484,6 @@ function selectPlayer(team, id) {
   renderHomeRoster();
   renderOpponentRoster();
   syncSelectedTokens();
-  setPanelOpen(true);
 }
 
 function validateSelection() {

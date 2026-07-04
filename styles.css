@@ -1091,14 +1091,13 @@ textarea {
   grid-template-columns: minmax(0, 1fr);
 }
 
-/* 横フィールドが縦に伸びすぎないよう、タブレット/デスクトップで盤面カラムの最大幅を
-   制限し中央寄せ。グリッドアイテム(.board-area)に効かせることで、内側の .field-shell /
-   .field(width:100% + aspect-ratio) が正しく追従する。 */
-@media (min-width: 681px) {
-  .board-area {
-    max-width: min(100%, calc((100vh - 200px) * 1.5441));
-    margin-inline: auto;
-  }
+/* 盤面カラムは全幅を基本とし、横表示の最大幅は app.js の fitBoardSize() が
+   実測の残り高さから計算して max-width(インラインstyle)で与える。
+   width:100% を明示するのは、margin auto によって grid の stretch が外れ
+   内容幅（描画ツールバーの幅）に縮んでしまうのを防ぐため。 */
+.board-area {
+  width: 100%;
+  margin-inline: auto;
 }
 
 /* --- ② 側面パネル: 右スライドのかぶせ型ドロワー --- */
