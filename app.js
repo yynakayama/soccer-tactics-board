@@ -714,12 +714,14 @@ function setDrawColor(color) {
 function startDrawStroke(event) {
   if (drawTool === "move") return;
   if (event.button !== undefined && event.button > 0) return;
+  if (activeStroke || activeDrag || activeRotate) return;
   event.preventDefault();
 
   activeStroke = {
     id: makeId("draw"),
     tool: drawTool,
     color: drawColor,
+    pointerId: event.pointerId,
     points: [drawPointFromEvent(event)],
   };
   els.drawLayer.setPointerCapture(event.pointerId);
@@ -729,7 +731,7 @@ function startDrawStroke(event) {
 }
 
 function moveDrawStroke(event) {
-  if (!activeStroke) return;
+  if (!activeStroke || event.pointerId !== activeStroke.pointerId) return;
   if (activeStroke.points.length >= MAX_STROKE_POINTS) return;
   const point = drawPointFromEvent(event);
   const last = activeStroke.points[activeStroke.points.length - 1];
@@ -738,11 +740,12 @@ function moveDrawStroke(event) {
   renderDrawings();
 }
 
-function endDrawStroke() {
+function endDrawStroke(event) {
+  if (!activeStroke || event.pointerId !== activeStroke.pointerId) return;
   els.drawLayer.removeEventListener("pointermove", moveDrawStroke);
   els.drawLayer.removeEventListener("pointerup", endDrawStroke);
   els.drawLayer.removeEventListener("pointercancel", endDrawStroke);
-  if (activeStroke && activeStroke.points.length >= 2 && state.drawings.length < MAX_STROKES) {
+  if (activeStroke.points.length >= 2 && state.drawings.length < MAX_STROKES) {
     state.drawings.push(activeStroke);
     saveState();
   }
